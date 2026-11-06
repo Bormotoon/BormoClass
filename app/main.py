@@ -48,14 +48,14 @@ app.include_router(board_router)
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-@app.get("/", response_class=FileResponse)
+@app.api_route("/", methods=["GET", "HEAD"], response_class=FileResponse)
 def index_page():
     index_file = STATIC_DIR / "index.html"
     if index_file.exists():
         return FileResponse(index_file)
     return HTMLResponse("<h1>BormoClass</h1><p>Интерфейс инициализируется...</p>")
 
-@app.get("/board/{class_id}", response_class=FileResponse)
+@app.api_route("/board/{class_id}", methods=["GET", "HEAD"], response_class=FileResponse)
 def board_page(class_id: int):
     board_file = STATIC_DIR / "board.html"
     if board_file.exists():
