@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BormoClass — Автономный класс и интерактивная доска (Zero-PII)</title>
+  <link rel="stylesheet" href="/static/css/md3-tokens.css">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <!-- Top App Bar -->
+  <header class="top-app-bar">
+    <div class="brand" id="brandBtn">
+      <div class="brand-logo">B</div>
+      <div class="brand-title">BormoClass</div>
+    </div>
+
+    <div class="top-bar-actions" id="userBar">
+      <!-- Injected dynamically: Handle, Badges, Recess, Theme, Logout -->
+    </div>
+  </header>
+
+  <!-- Navigation Bar -->
+  <nav class="nav-rail" id="navRail" style="display: none;">
+    <button class="nav-tab-btn active" data-view="classes" id="navClassesBtn">
+      <span>Классы</span>
+    </button>
+    <button class="nav-tab-btn" data-view="to-review" id="navToReviewBtn" style="display: none;">
+      <span>На проверку</span>
+      <span class="badge badge-pro" id="toReviewCountBadge" style="display: none;">0</span>
+    </button>
+    <button class="nav-tab-btn" data-view="to-do" id="navToDoBtn" style="display: none;">
+      <span>Список дел</span>
+    </button>
+    <button class="nav-tab-btn" data-view="calendar" id="navCalendarBtn">
+      <span>Календарь</span>
+    </button>
+  </nav>
+
+  <!-- Main Content Container -->
+  <main class="main-content" id="appMain">
+    <div id="loadingView" style="text-align: center; padding: 3rem;">
+      <p>Загрузка BormoClass...</p>
+    </div>
+  </main>
+
+  <!-- Modals and Overlay Container -->
+  <div id="modalContainer"></div>
+
+  <!-- Scripts -->
+  <script src="/static/js/pb-passport-bridge.js"></script>
+  <script type="module" src="/static/js/bormoclass-app.js"></script>
+</body>
+</html>
