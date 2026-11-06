@@ -168,3 +168,68 @@ def test_classroom_membership_and_grading_flow(client):
     assert m_data["students"][0]["seat_number"] == 7
     assert m_data["analytics"]["n5"] == 1
     assert m_data["analytics"]["sou"] == 100.0
+
+def test_recess_lock_blocks_student_spend(client):
+    # Учитель создает класс
+    t_reg = client.post("/api/passport/register", json={"role": "teacher", "password": "teachlockpass"})
+    c_res = client.post("/api/classroom/classes", json={"title": "10В Физика", "grade_level": 10})
+    class_id = c_res.json()["id"]
+    join_pin = c_res.json()["join_pin"]
+
+    # Ученик регистрируется и подключается к классу
+    s_reg = client.post("/api/passport/register", json={"role": "student", "password": "studentlockpass"})
+    client.post("/api/classroom/classes/join", json={"join_pin": join_pin, "seat_number": 12})
+
+    # Ученик пробует списать секунды на перемену — пока замок не включен, списание разрешено
+    spend1 = client.post("/api/passport/recess/spend", json={"seconds": 60})
+    assert spend1.status_code == 200
+    assert spend1.json()["ok"] is True
+
+    # Учитель включает рубильник контрольной работы на 45 минут
+    client.post("/api/passport/login", json={"handle": t_reg.json()["user"]["handle"], "password": "teachlockpass"})
+    lock_res = client.post(f"/api/classroom/classes/{class_id}/lock-recess", json={"duration_minutes": 45})
+    assert lock_res.status_code == 200
+    assert lock_res.json()["recess_locked_until"] > 0
+
+    # Ученик пытается списать секунды во время контрольной — возвращается 403 Forbidden
+    client.post("/api/passport/login", json={"handle": s_reg.json()["user"]["handle"], "password": "studentlockpass"})
+    spend2 = client.post("/api/passport/recess/spend", json={"seconds": 60})
+    assert spend2.status_code == 403
+    assert "заблокированы" in spend2.json()["detail"]
+
+def test_board_state_and_call_wheel(client):
+    # Учитель создает класс
+    t_reg = client.post("/api/passport/register", json={"role": "teacher", "password": "teachwheelpass"})
+    c_res = client.post("/api/classroom/classes", json={"title": "7А Геометрия", "grade_level": 7})
+    class_id = c_res.json()["id"]
+    join_pin = c_res.json()["join_pin"]
+
+    # Ученик регистрируется и садится на парту №3
+    s_reg = client.post("/api/passport/register", json={"role": "student", "password": "studwheelpass"})
+    client.post("/api/classroom/classes/join", json={"join_pin": join_pin, "seat_number": 3})
+
+    # Проверка получения состояния доски
+    board_state = client.get(f"/api/classroom/board/{class_id}/state")
+    assert board_state.status_code == 200
+    assert board_state.json()["class"]["id"] == class_id
+    assert len(board_state.json()["members"]) == 1
+
+    # Учитель получает список для колеса вызова к доске
+    client.post("/api/passport/login", json={"handle": t_reg.json()["user"]["handle"], "password": "teachwheelpass"})
+    wheel_res = client.get(f"/api/classroom/board/{class_id}/call-wheel")
+    assert wheel_res.status_code == 200
+    candidates = wheel_res.json()
+    assert len(candidates) == 1
+    assert candidates[0]["seat_number"] == 3
+    assert candidates[0]["handle"] == s_reg.json()["user"]["handle"]
+
+def test_pages_served_cleanly(client):
+    # Проверка раздачи главного SPA index.html
+    idx_resp = client.get("/")
+    assert idx_resp.status_code == 200
+    assert "BormoClass" in idx_resp.text
+
+    # Проверка раздачи интерактивной доски board.html
+    brd_resp = client.get("/board/1")
+    assert brd_resp.status_code == 200
+    assert "boardCanvas" in brd_resp.text
