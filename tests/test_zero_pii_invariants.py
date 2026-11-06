@@ -20,7 +20,7 @@ def test_sqlite_schema_has_zero_pii_columns():
             for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
             if not row["name"].startswith("sqlite_")
         ]
-        assert len(tables) >= 10, "Должны быть созданы все 10 таблиц (6 Passport/Billing + 4 Classroom)"
+        assert len(tables) >= 9, "Должны быть созданы все 9 таблиц BormoClass"
         for table in tables:
             cols = conn.execute(f"PRAGMA table_info({table})").fetchall()
             col_names = {c["name"].lower() for c in cols}

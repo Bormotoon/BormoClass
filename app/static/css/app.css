@@ -74,7 +74,7 @@ body {
   font-weight: 600;
 }
 
-.badge-pro {
+.badge-tag {
   background-color: var(--md-sys-color-primary-container);
   color: var(--md-sys-color-on-primary-container);
 }

@@ -10,7 +10,6 @@ import { TeacherZeroKnowledgeVault } from "./webcrypto-vault.js";
 class BormoClassApp {
   constructor() {
     this.user = null;
-    this.adFree = false;
     this.currentView = "classes"; // 'classes' | 'class-detail' | 'to-review' | 'to-do' | 'calendar'
     this.currentClassId = null;
     this.currentClassTab = "stream"; // 'stream' | 'classwork' | 'people' | 'grades'
@@ -34,11 +33,6 @@ class BormoClassApp {
         this.renderUserBar();
         this.renderNavigation();
         this.route();
-      });
-
-      window.pbPassport.onAdFreeChange((adFree) => {
-        this.adFree = adFree;
-        this.renderUserBar();
       });
     }
 
@@ -335,7 +329,7 @@ class BormoClassApp {
             </p>
             ${
               c.seat_number
-                ? `<div style="margin-top: 1rem;"><span class="badge badge-pro">Ваша парта: №${c.seat_number}</span></div>`
+                ? `<div style="margin-top: 1rem;"><span class="badge badge-tag">Ваша парта: №${c.seat_number}</span></div>`
                 : ""
             }
           </div>
@@ -680,7 +674,7 @@ class BormoClassApp {
       <div style="background: var(--md-sys-color-surface-container-lowest); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
           <h4 style="font-size: 1.1rem;">${it.title}</h4>
-          <span class="badge ${it.kind === "announcement" ? "badge-pro" : "badge-recess"}">${it.kind}</span>
+          <span class="badge ${it.kind === "announcement" ? "badge-tag" : "badge-recess"}">${it.kind}</span>
         </div>
         <p style="font-size: 0.9rem; color: var(--md-sys-color-on-surface-variant); white-space: pre-wrap;">${it.instructions || ""}</p>
       </div>
@@ -738,7 +732,7 @@ class BormoClassApp {
           ${
             !isTeacher
               ? `<button class="btn btn-primary turnin-btn" data-cwid="${it.id}">Сдать работу</button>`
-              : `<span class="badge badge-pro">Сдано: ${it.turned_in_count || 0}</span>`
+              : `<span class="badge badge-tag">Сдано: ${it.turned_in_count || 0}</span>`
           }
         </div>
       </div>

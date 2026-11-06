@@ -1,14 +1,12 @@
 /**
  * Client-side Pedobraz-Passport Bridge (window.pbPassport)
- * Handles postMessage iframe communication, solveTask API and ad-free attributes.
+ * Handles postMessage iframe communication and solveTask API.
  */
 
 (function () {
   const state = {
     user: null,
-    ad_free: true,
-    listeners: new Set(),
-    adFreeListeners: new Set()
+    listeners: new Set()
   };
 
   async function refreshSession() {
@@ -17,19 +15,13 @@
       if (res.ok) {
         const data = await res.json();
         state.user = data.user;
-        setAdFree(true);
         notifyListeners();
         return data;
       }
     } catch (e) {
       console.warn("Passport bridge: failed to fetch /api/passport/me", e);
     }
-    return { user: null, ad_free: true };
-  }
-
-  function setAdFree(value = true) {
-    state.ad_free = true;
-    document.documentElement.setAttribute("data-ad-free", "true");
+    return { user: null };
   }
 
   function notifyListeners() {
@@ -81,7 +73,6 @@
 
   // Cross-frame communication filter
   window.addEventListener("message", async (event) => {
-    // Безопасность origin: только доверенный источник того же хоста
     if (event.origin !== window.location.origin) {
       return;
     }
@@ -96,7 +87,6 @@
   });
 
   const pbPassport = {
-    isAdFree: () => true,
     getUser: () => state.user,
     solveTask,
     spendRecess,
@@ -105,17 +95,11 @@
       state.listeners.add(cb);
       if (state.user) cb(state.user);
       return () => state.listeners.delete(cb);
-    },
-    onAdFreeChange: (cb) => {
-      state.adFreeListeners.add(cb);
-      cb(state.ad_free);
-      return () => state.adFreeListeners.delete(cb);
     }
   };
 
   window.pbPassport = pbPassport;
 
-  // Initial session refresh
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", refreshSession);
   } else {

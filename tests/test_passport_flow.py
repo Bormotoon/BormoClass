@@ -13,8 +13,7 @@ from app.passport.generator import (
 )
 from app.passport.crypto_cookie import (
     sign_cookie_payload,
-    verify_cookie_token,
-    compute_user_ad_free
+    verify_cookie_token
 )
 
 @pytest.fixture(scope="module")
@@ -53,7 +52,7 @@ def test_generator_callsign_and_secrets():
     assert not verify_secret("WrongPassword", hashed)
 
 def test_cookie_signing_and_verification():
-    payload = {"user_id": 42, "role": "teacher", "handle": "Смелый-Барс-777", "ad_free": True}
+    payload = {"user_id": 42, "role": "teacher", "handle": "Смелый-Барс-777"}
     token = sign_cookie_payload(payload)
     assert "." in token
     decoded = verify_cookie_token(token)
@@ -61,7 +60,6 @@ def test_cookie_signing_and_verification():
     assert decoded["user_id"] == 42
     assert decoded["role"] == "teacher"
     assert decoded["handle"] == "Смелый-Барс-777"
-    assert decoded["ad_free"] is True
 
     # Tampered token
     tampered = token[:-4] + "abcd"
@@ -137,30 +135,21 @@ def test_idempotent_solve_and_anti_farm(client):
     assert d2["awarded_recess"] is False  # Must NOT be awarded again!
     assert d2["recess_seconds"] == initial_recess + 300  # Balance remains unchanged
 
-def test_teacher_and_student_permanently_free(client):
-    # Учитель регистрируется и сразу получает 100% бесплатный полный доступ
+def test_teacher_and_student_full_access(client):
+    # Учитель регистрируется и сразу получает полный доступ
     reg_t = client.post("/api/passport/register", json={"role": "teacher", "password": "teacherpass123"})
     assert reg_t.status_code == 200
-    assert reg_t.json()["ad_free"] is True
+    assert "user" in reg_t.json()
 
     me_t = client.get("/api/passport/me")
     assert me_t.status_code == 200
-    assert me_t.json()["ad_free"] is True
+    assert me_t.json()["user"]["role"] == "teacher"
 
-    # Ученик регистрируется и также сразу получает 100% бесплатный полный доступ
+    # Ученик регистрируется и также сразу получает полный доступ
     reg_s = client.post("/api/passport/register", json={"role": "student", "password": "studentpass123"})
     assert reg_s.status_code == 200
-    assert reg_s.json()["ad_free"] is True
+    assert "user" in reg_s.json()
 
     me_s = client.get("/api/passport/me")
     assert me_s.status_code == 200
-    assert me_s.json()["ad_free"] is True
-
-    # Вызовы trial и activate-code возвращают подтверждение 100% бесплатности
-    trial_resp = client.post("/api/passport/trial")
-    assert trial_resp.status_code == 200
-    assert trial_resp.json()["ad_free"] is True
-
-    code_resp = client.post("/api/passport/activate-code", json={"code": "FREE-ACCESS"})
-    assert code_resp.status_code == 200
-    assert code_resp.json()["ad_free"] is True
+    assert me_s.json()["user"]["role"] == "student"

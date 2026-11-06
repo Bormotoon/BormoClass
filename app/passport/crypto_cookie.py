@@ -50,7 +50,3 @@ def verify_cookie_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
         return data
     except Exception:
         return None
-
-def compute_user_ad_free(conn: sqlite3.Connection = None, user_id: int = None, role: str = None) -> bool:
-    # Платформа полностью бесплатна для всех учителей и учеников
-    return True

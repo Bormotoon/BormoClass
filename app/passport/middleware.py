@@ -6,7 +6,7 @@ from starlette.responses import Response
 from fastapi import HTTPException, status
 from app.config import settings
 from app.db import db_session
-from app.passport.crypto_cookie import verify_cookie_token, sign_cookie_payload, compute_user_ad_free
+from app.passport.crypto_cookie import verify_cookie_token, sign_cookie_payload
 
 class PassportMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
@@ -16,10 +16,7 @@ class PassportMiddleware(BaseHTTPMiddleware):
             if auth_header and auth_header.startswith("Bearer "):
                 token = auth_header[7:].strip()
 
-        user_data = verify_cookie_token(token)
-        if user_data:
-            user_data["ad_free"] = True
-        request.state.user = user_data
+        request.state.user = verify_cookie_token(token)
 
         return await call_next(request)
 

@@ -11,10 +11,7 @@ from app.passport.generator import (
     hash_secret,
     verify_secret
 )
-from app.passport.crypto_cookie import (
-    sign_cookie_payload,
-    compute_user_ad_free
-)
+from app.passport.crypto_cookie import sign_cookie_payload
 from app.passport.recess import (
     spend_recess_seconds,
     award_recess_seconds,
@@ -48,9 +45,6 @@ class SolveTaskRequest(BaseModel):
 
 class SpendRecessRequest(BaseModel):
     seconds: int = Field(gt=0)
-
-class ActivateCodeRequest(BaseModel):
-    code: str = Field(min_length=5, max_length=64)
 
 # -----------------------------------------------------------------------------
 # Вспомогательные функции
@@ -95,18 +89,17 @@ def score_to_grade_five(score: int) -> int:
 def get_me(request: Request):
     user_state = getattr(request.state, "user", None)
     if not user_state:
-        return {"user": None, "ad_free": False}
+        return {"user": None}
 
     user_id = user_state.get("user_id")
     with db_session() as conn:
         row = conn.execute(
-            "SELECT id, handle, role, avatar_seed, recess_seconds, pro_until, trial_used, created_at FROM users WHERE id = ?",
+            "SELECT id, handle, role, avatar_seed, recess_seconds, created_at FROM users WHERE id = ?",
             (user_id,)
         ).fetchone()
         if not row:
-            return {"user": None, "ad_free": False}
+            return {"user": None}
 
-        ad_free = compute_user_ad_free(conn, row["id"], row["role"])
         recess_locked = is_recess_locked_for_student(conn, row["id"]) if row["role"] == "student" else False
 
         user_info = {
@@ -115,12 +108,10 @@ def get_me(request: Request):
             "role": row["role"],
             "avatar_seed": row["avatar_seed"],
             "recess_seconds": row["recess_seconds"],
-            "pro_until": row["pro_until"],
-            "trial_used": row["trial_used"],
             "created_at": row["created_at"],
             "recess_locked": recess_locked
         }
-        return {"user": user_info, "ad_free": ad_free}
+        return {"user": user_info}
 
 @router.post("/register")
 def register(req: RegisterRequest, response: Response):
@@ -138,19 +129,17 @@ def register(req: RegisterRequest, response: Response):
         cursor = conn.execute("""
             INSERT INTO users (
                 handle, role, password_hash, recovery_words_hash,
-                avatar_seed, recess_seconds, pro_until, trial_used, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?)
+                avatar_seed, recess_seconds, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (handle, req.role, password_hash, recovery_words_hash, avatar_seed, initial_recess, now))
         
         user_id = cursor.lastrowid
-        ad_free = True
 
         user_data = {
             "user_id": user_id,
             "handle": handle,
             "role": req.role,
-            "avatar_seed": avatar_seed,
-            "ad_free": ad_free
+            "avatar_seed": avatar_seed
         }
         _set_auth_cookie(response, user_data)
 
@@ -160,19 +149,16 @@ def register(req: RegisterRequest, response: Response):
                 "handle": handle,
                 "role": req.role,
                 "avatar_seed": avatar_seed,
-                "recess_seconds": initial_recess,
-                "pro_until": 0,
-                "trial_used": 0
+                "recess_seconds": initial_recess
             },
-            "recovery_words": recovery_words,
-            "ad_free": ad_free
+            "recovery_words": recovery_words
         }
 
 @router.post("/login")
 def login(req: LoginRequest, response: Response):
     with db_session() as conn:
         row = conn.execute(
-            "SELECT id, handle, role, password_hash, avatar_seed, recess_seconds, pro_until, trial_used FROM users WHERE handle = ?",
+            "SELECT id, handle, role, password_hash, avatar_seed, recess_seconds, created_at FROM users WHERE handle = ?",
             (req.handle.strip(),)
         ).fetchone()
 
@@ -182,13 +168,11 @@ def login(req: LoginRequest, response: Response):
                 detail="Неверный позывной или пароль"
             )
 
-        ad_free = compute_user_ad_free(conn, row["id"], row["role"])
         user_data = {
             "user_id": row["id"],
             "handle": row["handle"],
             "role": row["role"],
-            "avatar_seed": row["avatar_seed"],
-            "ad_free": ad_free
+            "avatar_seed": row["avatar_seed"]
         }
         _set_auth_cookie(response, user_data)
 
@@ -199,10 +183,8 @@ def login(req: LoginRequest, response: Response):
                 "role": row["role"],
                 "avatar_seed": row["avatar_seed"],
                 "recess_seconds": row["recess_seconds"],
-                "pro_until": row["pro_until"],
-                "trial_used": row["trial_used"]
-            },
-            "ad_free": ad_free
+                "created_at": row["created_at"]
+            }
         }
 
 @router.post("/recover")
@@ -337,23 +319,3 @@ def spend_recess(req: SpendRecessRequest, request: Request):
             status_code = status.HTTP_403_FORBIDDEN if "заблокированы" in msg else status.HTTP_400_BAD_REQUEST
             raise HTTPException(status_code=status_code, detail=msg)
         return {"ok": True, "remaining_seconds": balance, "message": msg}
-
-@router.post("/activate-code")
-def activate_code(req: ActivateCodeRequest, request: Request, response: Response):
-    user = require_user(request)
-    return {
-        "ok": True,
-        "ad_free": True,
-        "free": True,
-        "message": "Платформа 100% бесплатна для всех учителей и учеников"
-    }
-
-@router.post("/trial")
-def activate_trial(request: Request, response: Response):
-    user = require_user(request)
-    return {
-        "ok": True,
-        "ad_free": True,
-        "free": True,
-        "message": "Платформа 100% бесплатна для всех учителей и учеников"
-    }

@@ -1,5 +1,5 @@
 -- ============================================================================
--- БЛОК 1: ТАБЛИЦЫ PEDOBRAZ-PASSPORT И БИЛЛИНГА (6 ТАБЛИЦ, 100% СОВМЕСТИМОСТЬ)
+-- БЛОК 1: ТАБЛИЦЫ АВТОРИЗАЦИИ И ПАСПОРТОВ ПОЛЬЗОВАТЕЛЕЙ (0 БАЙТ ПД, 152-ФЗ РФ)
 -- ============================================================================
 
 -- 1. Безымянные паспорта пользователей (0 байт ПД)
@@ -10,23 +10,11 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash       TEXT NOT NULL,                  -- Формат "salt$hex" (PBKDF2-HMAC-SHA256)
     recovery_words_hash TEXT NOT NULL,                  -- Формат "salt$hex" от 4 секретных слов восстановления
     avatar_seed         INTEGER NOT NULL DEFAULT 1,     -- Сид генерации геометрического/звериного аватара
-    recess_seconds      INTEGER NOT NULL DEFAULT 0,     -- Баланс игрового кошелька "Билет на перемену"
-    pro_until           INTEGER NOT NULL DEFAULT 0,     -- Unix-timestamp подписки "Пульт учителя" (дает ad_free классу)
-    trial_used          INTEGER NOT NULL DEFAULT 0,     -- 0 = доступен 7-дневный триал, 1 = триал уже использован
+    recess_seconds      INTEGER NOT NULL DEFAULT 0,     -- Игровой баланс кошелька "Билет на перемену"
     created_at          INTEGER NOT NULL
 );
 
--- 2. Оффлайн-ключи активации подписки "Пульт учителя" (0 байт ПД)
-CREATE TABLE IF NOT EXISTS license_keys (
-    code          TEXT PRIMARY KEY,                     -- Код формата "PED-26-K8M4-P9X2-7F"
-    tariff        TEXT NOT NULL DEFAULT 'month',        -- 'month' (30 дней) | 'year' (365 дней)
-    duration_days INTEGER NOT NULL DEFAULT 30,
-    used_by       INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    used_at       INTEGER,
-    created_at    INTEGER NOT NULL
-);
-
--- 3. Учебные классы
+-- 2. Учебные классы
 CREATE TABLE IF NOT EXISTS classes (
     id                   INTEGER PRIMARY KEY AUTOINCREMENT,
     teacher_id           INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
