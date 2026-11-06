@@ -84,18 +84,16 @@ class BormoClassApp {
     }
 
     const isTeacher = this.user.role === "teacher" || this.user.role === "admin";
-    const proBadge = this.adFree
-      ? `<span class="badge badge-pro">PRO (Без рекламы)</span>`
-      : isTeacher
-      ? `<button class="btn btn-tonal" id="activateProBtn" style="padding: 0.2rem 0.6rem; font-size: 0.8rem;">Активировать PRO</button>`
-      : "";
+    const roleBadge = isTeacher
+      ? `<span class="badge" style="background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container);">Учитель</span>`
+      : `<span class="badge" style="background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container);">Ученик</span>`;
 
     const recessBadge = !isTeacher
       ? `<span class="badge badge-recess" id="recessBadge" title="Баланс перемены">🎮 ${Math.floor(this.user.recess_seconds / 60)} мин</span>`
       : "";
 
     bar.innerHTML = `
-      ${proBadge}
+      ${roleBadge}
       ${recessBadge}
       <span style="font-weight: 700; font-size: 0.9rem;">${this.user.handle}</span>
       <button class="btn btn-secondary" id="themeBtn" title="Переключить тему">${getIcon("sun")}</button>
@@ -104,9 +102,6 @@ class BormoClassApp {
 
     document.getElementById("themeBtn").onclick = () => this.toggleTheme();
     document.getElementById("logoutBtn").onclick = () => this.logout();
-    if (document.getElementById("activateProBtn")) {
-      document.getElementById("activateProBtn").onclick = () => this.showActivateCodeModal();
-    }
   }
 
   renderNavigation() {
@@ -1393,37 +1388,6 @@ class BormoClassApp {
         }
       </div>
     `;
-  }
-
-  showActivateCodeModal() {
-    const modal = document.getElementById("modalContainer");
-    modal.innerHTML = `
-      <div class="modal-overlay">
-        <div class="modal-card">
-          <div class="modal-header">
-            <h3>Активация подписки «Пульт учителя»</h3>
-            <button class="btn btn-secondary" id="closeProModal">${getIcon("close")}</button>
-          </div>
-          <p style="font-size: 0.85rem; color: var(--md-sys-color-on-surface-variant); margin-bottom: 1rem;">
-            Введите пин-код активации формата PED-26-XXXX-XXXX-XX для отключения рекламы во всех ваших классах:
-          </p>
-          <input type="text" id="licenseCodeInput" placeholder="PED-26-DEV0-0001-1M" class="btn-secondary" style="width: 100%; padding: 0.75rem; font-family: var(--font-mono); border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant); margin-bottom: 1rem;">
-          <button class="btn btn-primary" id="submitProCodeBtn" style="width: 100%;">Активировать</button>
-        </div>
-      </div>
-    `;
-
-    document.getElementById("closeProModal").onclick = () => (modal.innerHTML = "");
-    document.getElementById("submitProCodeBtn").onclick = async () => {
-      const code = document.getElementById("licenseCodeInput").value.trim();
-      const res = await window.pbPassport.activateCode(code);
-      if (res && res.ok) {
-        modal.innerHTML = "";
-        alert("Подписка «Пульт учителя» успешно активирована на 30 дней!");
-      } else {
-        alert(res.error || "Неверный пин-код");
-      }
-    };
   }
 
   generatePrintA4(classId) {

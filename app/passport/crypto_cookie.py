@@ -51,26 +51,6 @@ def verify_cookie_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
     except Exception:
         return None
 
-def compute_user_ad_free(conn: sqlite3.Connection, user_id: int, role: str) -> bool:
-    now = int(time.time())
-    if role == "teacher" or role == "admin":
-        row = conn.execute("SELECT pro_until FROM users WHERE id = ?", (user_id,)).fetchone()
-        return bool(row and row["pro_until"] > now)
-    
-    if role == "student":
-        # Проверяем личную подписку
-        row = conn.execute("SELECT pro_until FROM users WHERE id = ?", (user_id,)).fetchone()
-        if row and row["pro_until"] > now:
-            return True
-        # Проверяем, состоит ли ученик хотя бы в одном классе, у учителя которого есть активный PRO
-        teacher_pro = conn.execute("""
-            SELECT 1 
-            FROM class_members cm
-            JOIN classes c ON cm.class_id = c.id
-            JOIN users t ON c.teacher_id = t.id
-            WHERE cm.student_id = ? AND t.pro_until > ?
-            LIMIT 1
-        """, (user_id, now)).fetchone()
-        return bool(teacher_pro)
-
-    return False
+def compute_user_ad_free(conn: sqlite3.Connection = None, user_id: int = None, role: str = None) -> bool:
+    # Платформа полностью бесплатна для всех учителей и учеников
+    return True

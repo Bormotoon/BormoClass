@@ -143,7 +143,7 @@ def register(req: RegisterRequest, response: Response):
         """, (handle, req.role, password_hash, recovery_words_hash, avatar_seed, initial_recess, now))
         
         user_id = cursor.lastrowid
-        ad_free = False
+        ad_free = True
 
         user_data = {
             "user_id": user_id,
@@ -341,75 +341,19 @@ def spend_recess(req: SpendRecessRequest, request: Request):
 @router.post("/activate-code")
 def activate_code(req: ActivateCodeRequest, request: Request, response: Response):
     user = require_user(request)
-    user_id = user["user_id"]
-    now = int(time.time())
-
-    with db_session() as conn:
-        code_row = conn.execute(
-            "SELECT code, duration_days, used_by FROM license_keys WHERE code = ?",
-            (req.code.strip(),)
-        ).fetchone()
-
-        if not code_row:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Пин-код активации не найден"
-            )
-        if code_row["used_by"] is not None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Этот пин-код уже был активирован ранее"
-            )
-
-        duration_sec = code_row["duration_days"] * 86400
-        user_row = conn.execute("SELECT pro_until, role FROM users WHERE id = ?", (user_id,)).fetchone()
-        current_pro = user_row["pro_until"] if user_row else 0
-        new_pro = max(now, current_pro) + duration_sec
-
-        conn.execute(
-            "UPDATE license_keys SET used_by = ?, used_at = ? WHERE code = ?",
-            (user_id, now, req.code.strip())
-        )
-        conn.execute(
-            "UPDATE users SET pro_until = ? WHERE id = ?",
-            (new_pro, user_id)
-        )
-
-        user_data = dict(user)
-        user_data["ad_free"] = True
-        _set_auth_cookie(response, user_data)
-
-        return {
-            "ok": True,
-            "pro_until": new_pro,
-            "ad_free": True,
-            "duration_days": code_row["duration_days"]
-        }
+    return {
+        "ok": True,
+        "ad_free": True,
+        "free": True,
+        "message": "Платформа 100% бесплатна для всех учителей и учеников"
+    }
 
 @router.post("/trial")
 def activate_trial(request: Request, response: Response):
-    user = require_teacher(request)
-    user_id = user["user_id"]
-    now = int(time.time())
-
-    with db_session() as conn:
-        user_row = conn.execute("SELECT trial_used, pro_until FROM users WHERE id = ?", (user_id,)).fetchone()
-        if not user_row:
-            raise HTTPException(status_code=404, detail="Пользователь не найден")
-        if user_row["trial_used"] != 0:
-            raise HTTPException(status_code=400, detail="Пробный период уже был использован")
-
-        new_pro = now + 7 * 86400
-        conn.execute("UPDATE users SET pro_until = ?, trial_used = 1 WHERE id = ?", (new_pro, user_id))
-
-        user_data = dict(user)
-        user_data["ad_free"] = True
-        _set_auth_cookie(response, user_data)
-        response.headers["X-Passport-Trial-Started"] = "1"
-
-        return {
-            "ok": True,
-            "pro_until": new_pro,
-            "ad_free": True,
-            "trial_used": 1
-        }
+    user = require_user(request)
+    return {
+        "ok": True,
+        "ad_free": True,
+        "free": True,
+        "message": "Платформа 100% бесплатна для всех учителей и учеников"
+    }

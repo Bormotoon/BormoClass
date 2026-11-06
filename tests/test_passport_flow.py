@@ -137,37 +137,30 @@ def test_idempotent_solve_and_anti_farm(client):
     assert d2["awarded_recess"] is False  # Must NOT be awarded again!
     assert d2["recess_seconds"] == initial_recess + 300  # Balance remains unchanged
 
-def test_teacher_trial_and_license_code(client):
-    # Register teacher
-    reg = client.post("/api/passport/register", json={"role": "teacher", "password": "teacherpass123"})
-    assert reg.status_code == 200
-    assert reg.json()["ad_free"] is False
+def test_teacher_and_student_permanently_free(client):
+    # Учитель регистрируется и сразу получает 100% бесплатный полный доступ
+    reg_t = client.post("/api/passport/register", json={"role": "teacher", "password": "teacherpass123"})
+    assert reg_t.status_code == 200
+    assert reg_t.json()["ad_free"] is True
 
-    # Activate trial
+    me_t = client.get("/api/passport/me")
+    assert me_t.status_code == 200
+    assert me_t.json()["ad_free"] is True
+
+    # Ученик регистрируется и также сразу получает 100% бесплатный полный доступ
+    reg_s = client.post("/api/passport/register", json={"role": "student", "password": "studentpass123"})
+    assert reg_s.status_code == 200
+    assert reg_s.json()["ad_free"] is True
+
+    me_s = client.get("/api/passport/me")
+    assert me_s.status_code == 200
+    assert me_s.json()["ad_free"] is True
+
+    # Вызовы trial и activate-code возвращают подтверждение 100% бесплатности
     trial_resp = client.post("/api/passport/trial")
     assert trial_resp.status_code == 200
     assert trial_resp.json()["ad_free"] is True
-    assert trial_resp.json()["trial_used"] == 1
-    assert "X-Passport-Trial-Started" in trial_resp.headers
 
-    # Second trial attempt should fail
-    trial2 = client.post("/api/passport/trial")
-    assert trial2.status_code == 400
-
-    # Test license code activation
-    from manage_codes import generate_code_string
-    test_code = generate_code_string()
-    now = int(time.time())
-    with db_session() as conn:
-        conn.execute(
-            "INSERT INTO license_keys (code, tariff, duration_days, created_at) VALUES (?, 'month', 30, ?)",
-            (test_code, now)
-        )
-
-    act_resp = client.post("/api/passport/activate-code", json={"code": test_code})
-    assert act_resp.status_code == 200
-    assert act_resp.json()["ad_free"] is True
-
-    # Reusing the same code should fail
-    act_resp2 = client.post("/api/passport/activate-code", json={"code": test_code})
-    assert act_resp2.status_code == 400
+    code_resp = client.post("/api/passport/activate-code", json={"code": "FREE-ACCESS"})
+    assert code_resp.status_code == 200
+    assert code_resp.json()["ad_free"] is True
