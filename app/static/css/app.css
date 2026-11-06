@@ -1,0 +1,511 @@
+/* BormoClass Main SPA Styles - Material Design 3.0 */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--md-sys-color-background);
+  color: var(--md-sys-color-on-background);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* App Header */
+.top-app-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--md-sys-color-surface-container);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--shape-corner-m);
+  background: linear-gradient(135deg, #f57300, #ff9e40);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 800;
+  font-size: 1.25rem;
+}
+
+.brand-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.top-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--shape-corner-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-pro {
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.badge-recess {
+  background-color: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+  cursor: pointer;
+}
+
+/* Navigation Tabs */
+.nav-rail {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 1.5rem;
+  background-color: var(--md-sys-color-surface);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.nav-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--shape-corner-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.nav-tab-btn:hover {
+  background-color: var(--md-sys-color-surface-container-high);
+}
+
+.nav-tab-btn.active {
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+/* Container */
+.main-content {
+  flex: 1;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* Class Showcase Cards */
+.classes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.class-card {
+  background-color: var(--md-sys-color-surface-container-lowest);
+  border-radius: var(--shape-corner-xl);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  overflow: hidden;
+  box-shadow: var(--elevation-1);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.class-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--elevation-3);
+}
+
+.class-card-header {
+  padding: 1.25rem;
+  background: linear-gradient(135deg, var(--md-sys-color-primary), #ff8c33);
+  color: white;
+}
+
+.class-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.class-card-body {
+  padding: 1.25rem;
+  flex: 1;
+}
+
+.class-card-footer {
+  padding: 0.75rem 1.25rem;
+  background-color: var(--md-sys-color-surface-container-low);
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+/* Class Banner */
+.class-hero-banner {
+  background: linear-gradient(135deg, #f57300, #ff8c33);
+  color: white;
+  border-radius: var(--shape-corner-xl);
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--elevation-2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.class-hero-pin-box {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--shape-corner-l);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  text-align: center;
+}
+
+.class-hero-pin-val {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  font-family: var(--font-mono);
+}
+
+/* Student Seating Grid (3 Rows, 1..40) */
+.desks-container {
+  background-color: var(--md-sys-color-surface-container-lowest);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--shape-corner-xl);
+  padding: 1.5rem;
+  box-shadow: var(--elevation-1);
+}
+
+.teacher-table-front {
+  width: 240px;
+  margin: 0 auto 2rem;
+  padding: 0.75rem;
+  text-align: center;
+  background-color: var(--md-sys-color-surface-container-highest);
+  border: 2px dashed var(--md-sys-color-outline);
+  border-radius: var(--shape-corner-m);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.classroom-rows {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.desk-row-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.desk-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  background-color: var(--md-sys-color-surface-container-low);
+  padding: 0.5rem;
+  border-radius: var(--shape-corner-l);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.seat-btn {
+  padding: 0.75rem 0.5rem;
+  border-radius: var(--shape-corner-m);
+  border: 2px solid transparent;
+  background-color: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  transition: all var(--transition-fast);
+  min-height: 64px;
+}
+
+.seat-btn:hover {
+  border-color: var(--md-sys-color-primary);
+  background-color: var(--md-sys-color-primary-container);
+}
+
+.seat-btn.occupied {
+  background-color: var(--md-sys-color-surface-container-highest);
+}
+
+.seat-btn.absent {
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+
+.seat-number-tag {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--md-sys-color-primary);
+}
+
+.seat-traffic-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.traffic-green { background-color: var(--traffic-green); }
+.traffic-yellow { background-color: var(--traffic-yellow); }
+.traffic-red { background-color: var(--traffic-red); }
+
+/* Traffic Light Bar (Student View) */
+.traffic-light-widget {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: var(--shape-corner-l);
+  background-color: var(--md-sys-color-surface-container-low);
+}
+
+.traffic-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid transparent;
+  border-radius: var(--shape-corner-m);
+  cursor: pointer;
+  font-weight: 700;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: transform var(--transition-fast);
+}
+
+.traffic-btn:hover {
+  transform: scale(1.02);
+}
+
+.traffic-btn.green {
+  background-color: var(--traffic-green-bg);
+  color: var(--traffic-green);
+  border-color: var(--traffic-green);
+}
+.traffic-btn.yellow {
+  background-color: var(--traffic-yellow-bg);
+  color: var(--traffic-yellow);
+  border-color: var(--traffic-yellow);
+}
+.traffic-btn.red {
+  background-color: var(--traffic-red-bg);
+  color: var(--traffic-red);
+  border-color: var(--traffic-red);
+}
+
+/* Analytical Metrics (SOU) */
+.analytics-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.metric-card {
+  background-color: var(--md-sys-color-surface-container-lowest);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--shape-corner-l);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--elevation-1);
+}
+
+.metric-title {
+  font-size: 0.85rem;
+  color: var(--md-sys-color-on-surface-variant);
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+
+.metric-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--md-sys-color-primary);
+}
+
+/* Gradebook Matrix Table */
+.matrix-wrapper {
+  overflow-x: auto;
+  background-color: var(--md-sys-color-surface-container-lowest);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--shape-corner-xl);
+  box-shadow: var(--elevation-1);
+}
+
+.gradebook-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.gradebook-table th,
+.gradebook-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.gradebook-table th {
+  background-color: var(--md-sys-color-surface-container);
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+}
+
+.gradebook-cell {
+  text-align: center;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: var(--shape-corner-s);
+  min-width: 60px;
+}
+
+.grade-5 { background-color: rgba(46, 125, 50, 0.15); color: #2e7d32; }
+.grade-4 { background-color: rgba(67, 160, 71, 0.12); color: #388e3c; }
+.grade-3 { background-color: rgba(245, 127, 23, 0.15); color: #f57f17; }
+.grade-2 { background-color: rgba(198, 40, 40, 0.15); color: #c62828; }
+
+/* Buttons & Controls */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--shape-corner-full);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-primary {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+.btn-primary:hover {
+  box-shadow: var(--elevation-2);
+  filter: brightness(1.05);
+}
+
+.btn-secondary {
+  background-color: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+}
+.btn-secondary:hover {
+  background-color: var(--md-sys-color-surface-container-highest);
+}
+
+.btn-tonal {
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+
+.modal-card {
+  background-color: var(--md-sys-color-surface-container-lowest);
+  border-radius: var(--shape-corner-xl);
+  padding: 1.5rem;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: var(--elevation-4);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+/* Print Sheet A4 */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .top-app-bar, .nav-rail, .btn, .no-print {
+    display: none !important;
+  }
+  .print-page {
+    page-break-after: always;
+    padding: 1.5cm;
+  }
+  .print-card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1cm;
+  }
+  .print-desk-card {
+    border: 1px dashed #666;
+    padding: 1cm;
+    border-radius: 4px;
+  }
+}

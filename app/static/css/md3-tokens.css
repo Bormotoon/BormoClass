@@ -1,0 +1,119 @@
+/* Material Design 3.0 Tokens - Ember Newsroom Palette (#f57300) */
+/* Zero External CDN - System Typography & Native Tokens */
+
+:root {
+  /* Color Palette - Light Theme */
+  --md-sys-color-primary: #f57300;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #ffe0cc;
+  --md-sys-color-on-primary-container: #4e2000;
+
+  --md-sys-color-secondary: #765848;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #ffdbca;
+  --md-sys-color-on-secondary-container: #2b160b;
+
+  --md-sys-color-tertiary: #655f31;
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: #ece3aa;
+  --md-sys-color-on-tertiary-container: #1f1c00;
+
+  --md-sys-color-error: #ba1a1a;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #ffdad6;
+  --md-sys-color-on-error-container: #410002;
+
+  --md-sys-color-background: #fff8f5;
+  --md-sys-color-on-background: #221a15;
+  --md-sys-color-surface: #fff8f5;
+  --md-sys-color-on-surface: #221a15;
+  --md-sys-color-surface-variant: #f4ded4;
+  --md-sys-color-on-surface-variant: #52443c;
+  --md-sys-color-surface-container-lowest: #ffffff;
+  --md-sys-color-surface-container-low: #fef1eb;
+  --md-sys-color-surface-container: #f9ebe4;
+  --md-sys-color-surface-container-high: #f3e5df;
+  --md-sys-color-surface-container-highest: #ede0d9;
+
+  --md-sys-color-outline: #85736b;
+  --md-sys-color-outline-variant: #d7c2b9;
+
+  /* Traffic Light Palette */
+  --traffic-green: #2e7d32;
+  --traffic-green-bg: #e8f5e9;
+  --traffic-yellow: #f57f17;
+  --traffic-yellow-bg: #fffde7;
+  --traffic-red: #c62828;
+  --traffic-red-bg: #ffebee;
+
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Elevation Shadows */
+  --elevation-1: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.12);
+  --elevation-2: 0 3px 6px rgba(0, 0, 0, 0.10), 0 2px 4px rgba(0, 0, 0, 0.12);
+  --elevation-3: 0 10px 20px rgba(0, 0, 0, 0.12), 0 3px 6px rgba(0, 0, 0, 0.10);
+  --elevation-4: 0 15px 25px rgba(0, 0, 0, 0.15), 0 5px 10px rgba(0, 0, 0, 0.12);
+
+  /* Corner Shapes */
+  --shape-corner-xs: 4px;
+  --shape-corner-s: 8px;
+  --shape-corner-m: 12px;
+  --shape-corner-l: 16px;
+  --shape-corner-xl: 24px;
+  --shape-corner-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.2, 0, 0, 1);
+  --transition-normal: 250ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+[data-theme="dark"] {
+  --md-sys-color-primary: #ffb68c;
+  --md-sys-color-on-primary: #532200;
+  --md-sys-color-primary-container: #763300;
+  --md-sys-color-on-primary-container: #ffe0cc;
+
+  --md-sys-color-secondary: #e6beab;
+  --md-sys-color-on-secondary: #432b1d;
+  --md-sys-color-secondary-container: #5c4132;
+  --md-sys-color-on-secondary-container: #ffdbca;
+
+  --md-sys-color-tertiary: #d0c790;
+  --md-sys-color-on-tertiary: #363107;
+  --md-sys-color-tertiary-container: #4d471c;
+  --md-sys-color-on-tertiary-container: #ece3aa;
+
+  --md-sys-color-error: #ffb4ab;
+  --md-sys-color-on-error: #690005;
+  --md-sys-color-error-container: #93000a;
+  --md-sys-color-on-error-container: #ffdad6;
+
+  --md-sys-color-background: #19120e;
+  --md-sys-color-on-background: #f0dfd8;
+  --md-sys-color-surface: #19120e;
+  --md-sys-color-on-surface: #f0dfd8;
+  --md-sys-color-surface-variant: #52443c;
+  --md-sys-color-on-surface-variant: #d7c2b9;
+  --md-sys-color-surface-container-lowest: #140d09;
+  --md-sys-color-surface-container-low: #221a15;
+  --md-sys-color-surface-container: #271e19;
+  --md-sys-color-surface-container-high: #322823;
+  --md-sys-color-surface-container-highest: #3d332d;
+
+  --md-sys-color-outline: #a08c84;
+  --md-sys-color-outline-variant: #52443c;
+
+  --traffic-green: #81c784;
+  --traffic-green-bg: #1b5e20;
+  --traffic-yellow: #fff176;
+  --traffic-yellow-bg: #f57f17;
+  --traffic-red: #e57373;
+  --traffic-red-bg: #b71c1c;
+
+  --elevation-1: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --elevation-2: 0 3px 6px rgba(0, 0, 0, 0.5);
+  --elevation-3: 0 10px 20px rgba(0, 0, 0, 0.6);
+  --elevation-4: 0 15px 25px rgba(0, 0, 0, 0.7);
+}
