@@ -1,0 +1,36 @@
+services:
+  bormoclass:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8010:8010"
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-bormoclass-super-secret-key-change-in-production-min32chars}
+      - COOKIE_DOMAIN=${COOKIE_DOMAIN:-}
+      - PORT=8010
+      - DB_PATH=/data/bormoclass.db
+      - BORMOCLASS_DOMAIN=${BORMOCLASS_DOMAIN:-localhost}
+    volumes:
+      - bormoclass_data:/data
+      - ./app/static:/srv/bormoclass/app/static:ro
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - BORMOCLASS_DOMAIN=${BORMOCLASS_DOMAIN:-localhost}
+    volumes:
+      - ./edge/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./app/static:/srv/bormoclass/app/static:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - bormoclass
+
+volumes:
+  bormoclass_data:
+  caddy_data:
+  caddy_config:
