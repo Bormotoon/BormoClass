@@ -33,6 +33,7 @@ class ClassCommentCreateRequest(BaseModel):
     parent_id: int
     body_text: str = Field(min_length=1, max_length=2000)
     reply_to_id: Optional[int] = None
+    mentioned_handles: Optional[List[str]] = None
 
 class ClassCommentUpdateRequest(BaseModel):
     body_text: str = Field(min_length=1, max_length=2000)
@@ -121,7 +122,9 @@ def create_class_comment(
         comment_id = cursor.lastrowid
 
         # Парсер упоминаний @handle
-        mentioned_handles = set(re.findall(r'@([\w\-]+)', req.body_text))
+        mentioned_handles = set(req.mentioned_handles or [])
+        if not mentioned_handles and not is_e2ee_envelope(req.body_text):
+            mentioned_handles = set(re.findall(r'@([\w\-А-Яа-яЁё]+)', req.body_text))
         if mentioned_handles:
             for handle in mentioned_handles:
                 target_user = conn.execute("""
@@ -330,23 +333,10 @@ def search_comment_bank(request: Request, q: Optional[str] = None):
     with db_session() as conn:
         ctx = resolve_auth_context(request, conn)
         user_id = ctx.user["id"]
-
-        query = "SELECT * FROM comment_bank WHERE teacher_id = ?"
-        params = [user_id]
-
-        if q:
-            clean_q = q.strip()
-            if clean_q.startswith("#"):
-                # Автодополнение по #хештегам
-                query += " AND comment_text LIKE ?"
-                params.append(f"%{clean_q}%")
-            else:
-                # Поиск по подстроке
-                query += " AND comment_text LIKE ?"
-                params.append(f"%{clean_q}%")
-
-        query += " ORDER BY id DESC LIMIT 50"
-        rows = conn.execute(query, params).fetchall()
+        rows = conn.execute(
+            "SELECT * FROM comment_bank WHERE teacher_id = ? ORDER BY id DESC LIMIT 200",
+            (user_id,)
+        ).fetchall()
         return [dict(r) for r in rows]
 
 @router.post("/api/classroom/comment-bank")

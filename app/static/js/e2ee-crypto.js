@@ -134,12 +134,58 @@
     // -------------------------------------------------------------------------
     // 4. Функции шифрования и дешифрования
     // -------------------------------------------------------------------------
+    function winnowingHash(s) {
+        let h = 0;
+        for (let i = 0; i < s.length; i++) {
+            h = ((h * 31) + s.charCodeAt(i)) & 0xFFFFFFFF;
+        }
+        return h >>> 0;
+    }
+
+    function computeOriginalityFingerprints(text, k = 5, w = 4) {
+        if (!text || typeof text !== "string") return [];
+        const words = text.toLowerCase().match(/[\wА-Яа-яЁё]+/g);
+        if (!words || words.length < k) return [];
+
+        const kGrams = [];
+        for (let i = 0; i <= words.length - k; i++) {
+            kGrams.push(words.slice(i, i + k).join(" "));
+        }
+        const hashes = kGrams.map(winnowingHash);
+
+        const fingerprints = new Set();
+        for (let i = 0; i <= hashes.length - w; i++) {
+            const window = hashes.slice(i, i + w);
+            const minVal = Math.min(...window);
+            fingerprints.add(minVal);
+        }
+        return Array.from(fingerprints);
+    }
+
     async function getActiveKey(classId) {
-        if (classId && classKeys.has(Number(classId))) {
-            return classKeys.get(Number(classId));
+        if (classId) {
+            const numId = Number(classId);
+            if (classKeys.has(numId)) {
+                return classKeys.get(numId);
+            }
+            const stored = localStorage.getItem("bormo_ck_" + numId);
+            if (stored) {
+                try {
+                    const k = await importRawKey(stored);
+                    classKeys.set(numId, k);
+                    return k;
+                } catch {}
+            }
         }
         if (defaultClassKey) {
             return defaultClassKey;
+        }
+        const activeStored = localStorage.getItem("bormo_active_ck");
+        if (activeStored) {
+            try {
+                defaultClassKey = await importRawKey(activeStored);
+                return defaultClassKey;
+            } catch {}
         }
         if (currentMasterKey) {
             return currentMasterKey;
@@ -190,6 +236,22 @@
             if (!candidateKeys.includes(k)) candidateKeys.push(k);
         }
         if (currentMasterKey && !candidateKeys.includes(currentMasterKey)) candidateKeys.push(currentMasterKey);
+
+        // Добавляем все сохранённые ключи из localStorage
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const kn = localStorage.key(i);
+                if (kn && (kn.startsWith("bormo_ck_") || kn === "bormo_active_ck")) {
+                    const rawVal = localStorage.getItem(kn);
+                    if (rawVal) {
+                        try {
+                            const impK = await importRawKey(rawVal);
+                            candidateKeys.push(impK);
+                        } catch {}
+                    }
+                }
+            }
+        } catch {}
 
         const iv = new Uint8Array(base64UrlToBuffer(parts[1]));
         const ct = base64UrlToBuffer(parts[2]);
@@ -251,6 +313,22 @@
             if (!candidateKeys.includes(k)) candidateKeys.push(k);
         }
         if (currentMasterKey) candidateKeys.push(currentMasterKey);
+
+        // Добавляем все сохранённые ключи из localStorage
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const kn = localStorage.key(i);
+                if (kn && (kn.startsWith("bormo_ck_") || kn === "bormo_active_ck")) {
+                    const rawVal = localStorage.getItem(kn);
+                    if (rawVal) {
+                        try {
+                            const impK = await importRawKey(rawVal);
+                            candidateKeys.push(impK);
+                        } catch {}
+                    }
+                }
+            }
+        } catch {}
 
         const iv = uint8Array.slice(16, 28);
         const ct = uint8Array.slice(28);
@@ -383,6 +461,26 @@
             try {
                 if (typeof options.body === "string" && (options.body.startsWith("{") || options.body.startsWith("["))) {
                     const parsed = JSON.parse(options.body);
+
+                    // 1. Упоминания @handle перед шифрованием body_text (Item 3.3)
+                    if (parsed && typeof parsed === "object" && typeof parsed.body_text === "string") {
+                        const mentionMatches = parsed.body_text.match(/@([\w\-А-Яа-яЁё]+)/g);
+                        if (mentionMatches && (!parsed.mentioned_handles || parsed.mentioned_handles.length === 0)) {
+                            parsed.mentioned_handles = mentionMatches.map(m => m.slice(1));
+                        }
+                    }
+
+                    // 2. Генерация Zero-Knowledge fingerprints для антиплагиата (Item 3.2)
+                    if (url.includes("/turn-in") || url.includes("/originality-check")) {
+                        const textForFp = parsed.content_text || parsed.text || parsed.payload_json || "";
+                        if (textForFp && typeof textForFp === "string" && !textForFp.startsWith(E2EE_TEXT_PREFIX)) {
+                            const fps = computeOriginalityFingerprints(textForFp);
+                            if (fps.length > 0) {
+                                parsed.fingerprints = fps;
+                            }
+                        }
+                    }
+
                     const transformed = await transformPayloadForSend(parsed, activeKey);
                     options.body = JSON.stringify(transformed);
                 } else if (options.body instanceof FormData) {
@@ -418,19 +516,51 @@
         // 4. Прозрачно перехватываем response.json()
         const origJson = response.json.bind(response);
         response.json = async function () {
-            const data = await origJson();
-            // Запоминаем ключи класса, если пришли в ответе
+            let data = await origJson();
+            // Запоминаем ключи класса, если пришли в ответе (Item 3.1)
             if (data && typeof data === "object") {
-                if (data.join_pin) {
-                    const ck = await deriveKeyFromSecret(data.join_pin, "bormo-class-pin:" + (data.id || ""));
-                    if (data.id) classKeys.set(Number(data.id), ck);
-                    defaultClassKey = ck;
-                }
-                if (data.class_id && data.e2ee_key_envelope) {
-                    // Распаковка envelope
+                const processClassItem = async (cls) => {
+                    if (cls && cls.id && cls.join_pin) {
+                        try {
+                            const ck = await deriveKeyFromSecret(String(cls.join_pin), "bormo-class-pin:" + String(cls.id));
+                            classKeys.set(Number(cls.id), ck);
+                            const raw = await exportRawKey(ck);
+                            localStorage.setItem("bormo_ck_" + cls.id, raw);
+                            localStorage.setItem("bormo_active_ck", raw);
+                            defaultClassKey = ck;
+                        } catch (e) {
+                            console.warn("Failed to derive class key", e);
+                        }
+                    }
+                };
+                if (Array.isArray(data)) {
+                    for (const item of data) {
+                        await processClassItem(item);
+                    }
+                } else if (data.courses && Array.isArray(data.courses)) {
+                    for (const item of data.courses) {
+                        await processClassItem(item);
+                    }
+                } else {
+                    await processClassItem(data);
                 }
             }
-            return await transformResponseData(data);
+
+            let decrypted = await transformResponseData(data);
+
+            // Фильтрация банка комментариев на клиенте (Item 3.3)
+            if (url.includes("/comment-bank") && Array.isArray(decrypted)) {
+                try {
+                    const u = new URL(url, window.location.origin);
+                    const qParam = u.searchParams.get("q");
+                    if (qParam && qParam.trim()) {
+                        const qLower = qParam.trim().toLowerCase();
+                        decrypted = decrypted.filter(c => (c.comment_text || "").toLowerCase().includes(qLower));
+                    }
+                } catch {}
+            }
+
+            return decrypted;
         };
 
         // 5. Прозрачно перехватываем скачивание файлов из хранилища
@@ -461,6 +591,7 @@
         encryptBlob,
         decryptBlob,
         hmacAnswer,
+        computeOriginalityFingerprints,
         setClassKey: function (classId, key) {
             classKeys.set(Number(classId), key);
             defaultClassKey = key;
