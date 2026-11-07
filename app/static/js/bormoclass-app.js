@@ -189,10 +189,15 @@ class BormoClassApp {
     if (!this.user) {
       bar.innerHTML = `
         <button class="btn btn-secondary" id="loginBtn">Войти</button>
-        <button class="btn btn-primary" id="registerBtn">Регистрация</button>
+        <a href="/passport/" class="btn btn-primary" id="registerBtn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem;">Создать Паспорт</a>
       `;
-      document.getElementById("loginBtn").onclick = () => this.showAuthModal("login");
-      document.getElementById("registerBtn").onclick = () => this.showAuthModal("register");
+      document.getElementById("loginBtn").onclick = () => {
+        if (window.pbPassport && window.pbPassport.open) {
+          window.pbPassport.open("login");
+        } else {
+          this.showAuthModal("login");
+        }
+      };
       return;
     }
 
@@ -208,11 +213,36 @@ class BormoClassApp {
     bar.innerHTML = `
       ${roleBadge}
       ${recessBadge}
-      <span style="font-weight: 700; font-size: 0.9rem;">${this.user.handle}</span>
+      <div id="userPassportChip" style="cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.6rem; border-radius: 999px; background: var(--md-sys-color-surface-container); border: 1px solid var(--md-sys-color-outline-variant);" title="Открыть Паспорт и карточку героя">
+        <span id="userBarAvatar"></span>
+        <span style="font-weight: 700; font-size: 0.9rem;">${this.user.handle}</span>
+      </div>
       <button class="btn btn-secondary" id="themeBtn" title="Переключить тему">${getIcon("sun")}</button>
       <button class="btn btn-secondary" id="logoutBtn" title="Выйти">${getIcon("logout")}</button>
     `;
 
+    const avaContainer = document.getElementById("userBarAvatar");
+    if (avaContainer && window.pbPassport) {
+      avaContainer.innerHTML = window.pbPassport.avatarSvg(this.user.avatar_seed || 1, 24);
+      if (window.pbPassport.portraits) {
+        window.pbPassport.portraits().then(idx => {
+          const hero = window.pbPassport.heroOf(idx, this.user.role, this.user.handle);
+          const img = document.createElement("img");
+          img.src = hero.src;
+          img.width = 24;
+          img.height = 24;
+          img.style.borderRadius = "50%";
+          img.style.objectFit = "cover";
+          avaContainer.replaceChildren(img);
+        }).catch(() => {});
+      }
+    }
+
+    document.getElementById("userPassportChip").onclick = () => {
+      if (window.pbPassport && window.pbPassport.open) {
+        window.pbPassport.open("profile");
+      }
+    };
     document.getElementById("themeBtn").onclick = () => this.toggleTheme();
     document.getElementById("logoutBtn").onclick = () => this.logout();
   }
@@ -300,6 +330,12 @@ class BormoClassApp {
             </form>
           `
               : `
+            <div style="margin-bottom: 1rem; text-align: center;">
+              <a href="/passport/" class="btn btn-primary" style="width: 100%; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 700; padding: 0.85rem;">
+                🎮 Интерактивный 3D-генератор героя
+              </a>
+              <span style="display: block; margin: 0.5rem 0; font-size: 0.8rem; color: var(--md-sys-color-on-surface-variant);">— или быстрая форма создания паспорта —</span>
+            </div>
             <form id="authForm" style="display: flex; flex-direction: column; gap: 1rem;">
               <p style="font-size: 0.85rem; color: var(--md-sys-color-on-surface-variant);">
                 По стандарту 152-ФЗ РФ персональные данные не запрашиваются. Вам будет сгенерирован безымянный позывной и 4 слова восстановления.
@@ -315,7 +351,7 @@ class BormoClassApp {
                 <label style="font-size: 0.85rem; font-weight: 600;">Придумайте пароль (от 4 символов)</label>
                 <input type="password" id="authPassword" required minlength="4" class="btn-secondary" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant);">
               </div>
-              <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Создать паспорт</button>
+              <button type="submit" class="btn btn-secondary" style="margin-top: 0.5rem;">Быстро создать паспорт</button>
             </form>
           `
           }

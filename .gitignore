@@ -16,3 +16,4 @@ build/
 *.egg-info/
 .env
 data/
+app/static/passport/portraits/

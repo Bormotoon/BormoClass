@@ -166,6 +166,26 @@ app.include_router(v1_router)
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+# Раздача портретов персонажей Паспорта
+PORTRAITS_DIR = STATIC_DIR / "passport" / "portraits"
+if PORTRAITS_DIR.exists():
+    app.mount("/passport/portraits", StaticFiles(directory=str(PORTRAITS_DIR)), name="passport_portraits")
+
+@app.api_route("/pb-passport.js", methods=["GET", "HEAD"], response_class=FileResponse)
+def pb_passport_script():
+    script_file = STATIC_DIR / "js" / "pb-passport.js"
+    if script_file.exists():
+        return FileResponse(script_file, media_type="application/javascript")
+    return HTMLResponse("", status_code=404)
+
+@app.api_route("/passport", methods=["GET", "HEAD"], response_class=FileResponse)
+@app.api_route("/passport/", methods=["GET", "HEAD"], response_class=FileResponse)
+def passport_page():
+    passport_file = STATIC_DIR / "passport" / "index.html"
+    if passport_file.exists():
+        return FileResponse(passport_file)
+    return HTMLResponse("<h1>Паспорт BormoClass</h1><p>Генератор карточек инициализируется...</p>")
+
 @app.api_route("/", methods=["GET", "HEAD"], response_class=FileResponse)
 def index_page():
     index_file = STATIC_DIR / "index.html"
