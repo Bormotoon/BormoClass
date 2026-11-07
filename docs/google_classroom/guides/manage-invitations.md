@@ -1,0 +1,51 @@
+# Manage Invitations
+
+> Source: [https://developers.google.com/workspace/classroom/guides/manage-invitations](https://developers.google.com/workspace/classroom/guides/manage-invitations)
+
+---
+
+[
+    
+          Google Workspace
+        
+  ](https://developers.google.com/workspace)
+  
+      
+    
+  
+  
+  
+- 
+    
+      
+      
+    
+    
+    
+      
+        
+  [
+    
+          Google Classroom
+        
+  ](https://developers.google.com/workspace/classroom)
+  
+      
+    
+  
+  
+  
+- 
+    
+      
+      
+    
+    
+    
+      
+        
+  [
+    
+          Guides
+        
+  ](https://developers.google.com/workspace/classroom/guides/get-started)
