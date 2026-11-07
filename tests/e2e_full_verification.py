@@ -208,7 +208,7 @@ def run():
         print("10.1 Student submitted assignment solution.")
 
         # -------------------------------------------------------------
-        # STEP 11: TEACHER GRADING, AES-GCM VAULT & SIMONOV SOU
+        # STEP 11: TEACHER GRADING, ZERO-PII SEATING & SIMONOV SOU
         # -------------------------------------------------------------
         print("\n--- STEP 11: Teacher Verifies Student & Grades ---")
         # Check seating chart in teacher view
@@ -216,32 +216,30 @@ def run():
         t_page.wait_for_timeout(1000)
         t_page.screenshot(path=f"{SCREENSHOT_DIR}/16_teacher_seat_12_occupied.png")
 
-        # Initialize WebCrypto AES-GCM Vault Key
-        print("11.1 Initializing Teacher WebCrypto AES-GCM Vault...")
-        t_page.click("#vaultKeyBtn")
-        t_page.wait_for_selector("#vaultPassphrase", timeout=5000)
-        t_page.fill("#vaultPassphrase", "TeacherVaultPass2026!")
-        t_page.click("#initVaultBtn")
-        t_page.wait_for_timeout(500)
-
         # Find seat 12 button
         occupied_seat = t_page.query_selector(".seat-btn.occupied")
-        print(f"11.2 Occupied seat button found: {bool(occupied_seat)}")
+        print(f"11.1 Occupied seat button found: {bool(occupied_seat)}")
         if occupied_seat:
-            print(f"Seat 12 text: {occupied_seat.inner_text().strip()}")
-            # Click seat 12 to test teacher's encrypted note
+            seat_text = occupied_seat.inner_text().strip()
+            print(f"Seat 12 text (only generated handle): {seat_text}")
+            assert "Смирнов" not in seat_text and "Дмитрий" not in seat_text
+            # Click seat 12 to test teacher's student management modal (attendance check, 0 PII)
             occupied_seat.click()
-            t_page.wait_for_selector("#plainStudentName", timeout=5000)
-            t_page.fill("#plainStudentName", "Смирнов Дмитрий")
+            t_page.wait_for_selector("#saveMemberBtn", timeout=5000)
             t_page.click("#saveMemberBtn")
             t_page.wait_for_timeout(1000)
-            print("11.3 Real name encrypted with WebCrypto AES-GCM.")
+            print("11.2 Student presence confirmed with 0 PII.")
 
         # Open Grades tab
         t_page.click("button[data-ctab='grades']")
         t_page.wait_for_selector(".gradebook-table", timeout=5000)
         t_page.wait_for_timeout(1000)
         t_page.screenshot(path=f"{SCREENSHOT_DIR}/17_teacher_gradebook_submission.png")
+
+        # Verify that gradebook table contains only generated handle and NO personal data
+        gradebook_text = t_page.inner_text(".gradebook-table")
+        assert "Смирнов" not in gradebook_text and "Дмитрий" not in gradebook_text, "Gradebook must not contain any personal data!"
+        assert "ФИО" not in gradebook_text, "Gradebook must not have FIO column!"
 
         # Grade the cell
         grade_cell = t_page.query_selector(".gradebook-cell")
@@ -271,6 +269,8 @@ def run():
             csv_content = f.read()
         print(f"12.1 Downloaded CSV Preview (with UTF-8 BOM):\n{csv_content[:300]}")
         assert len(csv_content) > 10, "CSV export should contain rows"
+        assert "Смирнов" not in csv_content and "Дмитрий" not in csv_content, "CSV must not contain any personal data!"
+        assert "ФИО" not in csv_content, "CSV must not contain FIO column!"
 
         # -------------------------------------------------------------
         # STEP 13: STUDENT REWARD / RECESS WALLET VERIFICATION

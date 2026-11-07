@@ -4,7 +4,8 @@ from app.db import init_db, db_session
 FORBIDDEN_COLUMNS = {
     "full_name", "first_name", "last_name", "middle_name", "patronymic",
     "fio", "name", "email", "mail", "phone", "tel", "birth_year",
-    "birth_date", "birthday", "gender", "sex", "ip", "ip_address", "passport"
+    "birth_date", "birthday", "gender", "sex", "ip", "ip_address", "passport",
+    "encrypted_note"
 }
 
 FORBIDDEN_CDN_HOSTS = (
@@ -85,6 +86,14 @@ def test_zero_pii_guards_and_filename_hashing():
 
     with pytest.raises(HTTPException) as exc:
         assert_zero_pii_text("Петров П.П.")
+    assert exc.value.status_code == 422
+
+    with pytest.raises(HTTPException) as exc:
+        assert_zero_pii_text("Смирнов Дмитрий")
+    assert exc.value.status_code == 422
+
+    with pytest.raises(HTTPException) as exc:
+        assert_zero_pii_text("Дмитрий Смирнов")
     assert exc.value.status_code == 422
 
     # 2. Интеграционная проверка через API
@@ -184,3 +193,27 @@ def test_zero_pii_guards_and_filename_hashing():
         assert "8А" not in title
         assert title.startswith("Вложение #")
         assert title.endswith(".pdf")
+
+def test_no_client_side_vault_or_pii_storage():
+    """
+    Проверка полного отсутствия хранилища или сбора ПД:
+    1. Файл webcrypto-vault.js удален.
+    2. В исходниках app/ нет импортов TeacherZeroKnowledgeVault, plainStudentName или encrypted_note.
+    """
+    project_root = Path(__file__).parent.parent
+    vault_file = project_root / "app" / "static" / "js" / "webcrypto-vault.js"
+    assert not vault_file.exists(), f"Файл {vault_file} не должен существовать!"
+
+    forbidden_tokens = ["TeacherZeroKnowledgeVault", "plainStudentName", "encrypted_note"]
+    app_dir = project_root / "app"
+    for path in app_dir.rglob("*"):
+        if not path.is_file():
+            continue
+        if "__pycache__" in path.parts or "assets" in path.parts or path.suffix in {".pyc", ".png", ".woff2", ".ico"}:
+            continue
+        if path == project_root / "app" / "db.py":
+            continue
+        if path.suffix in {".py", ".js", ".html", ".sql"}:
+            content = path.read_text(encoding="utf-8", errors="ignore")
+            for token in forbidden_tokens:
+                assert token not in content, f"Запрещенный PII-токен '{token}' найден в {path.relative_to(project_root)}"
