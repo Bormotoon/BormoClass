@@ -1042,7 +1042,7 @@ export class SpeedGrader {
   async saveDraftGrade(points) {
     if (!this.studentId || !this.courseworkId) return;
     try {
-      await fetch(`/coursework/${this.courseworkId}/submissions/${this.studentId}/grade-rubric`, {
+      await fetch(`/api/classroom/coursework/${this.courseworkId}/submissions/${this.studentId}/grade-rubric`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1058,7 +1058,7 @@ export class SpeedGrader {
   async toggleExcused(isExcused) {
     if (!this.studentId || !this.courseworkId) return;
     try {
-      await fetch(`/coursework/${this.courseworkId}/submissions/${this.studentId}/excuse`, {
+      await fetch(`/api/classroom/coursework/${this.courseworkId}/submissions/${this.studentId}/excuse`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ is_excused: isExcused }),

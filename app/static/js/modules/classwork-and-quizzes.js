@@ -5,7 +5,7 @@
  * Zero external CDN dependencies. Zero-PII compliant.
  */
 
-import { v1Fetch } from "./api-v1.js";
+import { v1Fetch, escapeHtml } from "./api-v1.js";
 
 /**
  * Renders the complete Classwork tab view
@@ -801,6 +801,37 @@ function initQuizPlayer(quiz, modalEl) {
     </div>
   `).join("");
 
+  // Setup interactive drag & drop reordering for ORDERING questions
+  bodyEl.querySelectorAll(".ordering-list").forEach(list => {
+    let dragged = null;
+    list.querySelectorAll(".ordering-item").forEach(item => {
+      item.addEventListener("dragstart", () => {
+        dragged = item;
+        item.style.opacity = "0.5";
+      });
+      item.addEventListener("dragend", () => {
+        item.style.opacity = "1";
+        dragged = null;
+      });
+      item.addEventListener("dragover", (e) => {
+        e.preventDefault();
+      });
+      item.addEventListener("drop", (e) => {
+        e.preventDefault();
+        if (dragged && dragged !== item) {
+          const allItems = Array.from(list.children);
+          const draggedIdx = allItems.indexOf(dragged);
+          const targetIdx = allItems.indexOf(item);
+          if (draggedIdx < targetIdx) {
+            item.after(dragged);
+          } else {
+            item.before(dragged);
+          }
+        }
+      });
+    });
+  });
+
   const close = () => {
     clearInterval(timerInterval);
     document.removeEventListener("visibilitychange", onVisibilityChange);
@@ -822,17 +853,21 @@ function initQuizPlayer(quiz, modalEl) {
       const res = await v1Fetch(`/api/classroom/quizzes/${quiz.id}/submit`, {
         method: "POST",
         body: {
-          answers,
-          tab_switch_count: tabSwitchViolations
+          answers_json: answers,
+          focus_lost_count: tabSwitchViolations
         }
       });
+
+      const score = res.auto_score ?? res.score ?? 0;
+      const maxScore = res.max_score ?? 0;
+      const percent = maxScore > 0 ? Math.round((score / maxScore) * 100) : 100;
 
       // Show result screen
       bodyEl.innerHTML = `
         <div class="quiz-result-view">
           <div class="result-badge-icon">🎉</div>
           <h3>Тест завершен!</h3>
-          <div class="result-score">Ваш результат: <strong>${res.score}</strong> из ${res.max_score} баллов (${res.percent}%)</div>
+          <div class="result-score">Ваш результат: <strong>${score}</strong> из ${maxScore} баллов (${percent}%)</div>
           ${tabSwitchViolations > 0 ? `<div class="violations-alert">Вниманию учителя: зафиксировано выходов из вкладки: ${tabSwitchViolations}</div>` : ""}
         </div>
       `;
@@ -851,14 +886,17 @@ function initQuizPlayer(quiz, modalEl) {
 }
 
 function renderQuestionAnswerInput(q, qIdx) {
-  const type = q.type || "single_choice";
+  const rawType = (q.type || "single_choice").toLowerCase();
+  let type = rawType;
+  if (type === "short_text") type = "short_answer";
+  if (type === "numeric_tolerance") type = "numeric";
 
   switch (type) {
     case "single_choice":
       return (q.options || []).map((opt, i) => `
         <label class="q-option-label">
           <input type="radio" name="q_${qIdx}" value="${i}" />
-          <span>${opt}</span>
+          <span>${escapeHtml(opt)}</span>
         </label>
       `).join("");
 
@@ -866,43 +904,46 @@ function renderQuestionAnswerInput(q, qIdx) {
       return (q.options || []).map((opt, i) => `
         <label class="q-option-label">
           <input type="checkbox" name="q_${qIdx}" value="${i}" />
-          <span>${opt}</span>
+          <span>${escapeHtml(opt)}</span>
         </label>
       `).join("");
 
     case "short_answer":
       return `<input type="text" class="form-control" name="q_${qIdx}" placeholder="Ваш краткий ответ..." />`;
 
-    case "paragraph":
-      return `<textarea class="form-control" name="q_${qIdx}" rows="4" placeholder="Развернутый ответ..."></textarea>`;
-
     case "numeric":
       return `<input type="number" step="any" class="form-control" name="q_${qIdx}" placeholder="Числовой ответ..." />`;
 
-    case "matching":
+    case "matching": {
+      const pairs = Array.isArray(q.pairs)
+        ? q.pairs
+        : Object.entries(q.pairs || {}).map(([k, v]) => ({ left: k, right: v }));
       return `
         <div class="matching-grid">
-          ${(q.pairs || []).map((pair, i) => `
+          ${pairs.map((pair, i) => `
             <div class="matching-row">
-              <span class="match-left">${pair.left}</span>
+              <span class="match-left">${escapeHtml(pair.left)}</span>
               <span class="match-arrow">→</span>
-              <input type="text" class="form-control match-right-input" name="q_${qIdx}_match_${i}" placeholder="Соответствие" />
+              <input type="text" class="form-control match-right-input" name="q_${qIdx}_match_${i}" data-left="${escapeHtml(pair.left)}" placeholder="Соответствие" />
             </div>
           `).join("")}
         </div>
       `;
+    }
 
-    case "ordering":
+    case "ordering": {
+      const items = q.items || q.correct_order || [];
       return `
         <div class="ordering-list" id="orderList_${qIdx}">
-          ${(q.items || []).map((item, i) => `
-            <div class="ordering-item" draggable="true" data-item="${item}">
+          ${items.map((item) => `
+            <div class="ordering-item" draggable="true" data-item="${escapeHtml(item)}" style="display:flex;align-items:center;gap:8px;padding:6px;border:1px solid #ccc;margin-bottom:4px;border-radius:4px;cursor:grab;">
               <span class="order-handle">☰</span>
-              <span class="order-text">${item}</span>
+              <span class="order-text">${escapeHtml(item)}</span>
             </div>
           `).join("")}
         </div>
       `;
+    }
 
     default:
       return `<input type="text" class="form-control" name="q_${qIdx}" />`;
@@ -912,18 +953,41 @@ function renderQuestionAnswerInput(q, qIdx) {
 function collectQuizAnswers(questions, container) {
   const answers = {};
   questions.forEach((q, idx) => {
-    const type = q.type || "single_choice";
+    const rawType = (q.type || "single_choice").toLowerCase();
+    let type = rawType;
+    if (type === "short_text") type = "short_answer";
+    if (type === "numeric_tolerance") type = "numeric";
+
+    const qKey = String(q.id ?? idx);
+
     if (type === "single_choice") {
       const checked = container.querySelector(`input[name="q_${idx}"]:checked`);
-      answers[idx] = checked ? Number(checked.value) : null;
+      answers[qKey] = checked ? (isNaN(checked.value) ? checked.value : Number(checked.value)) : null;
     } else if (type === "multiple_choice") {
       const checked = container.querySelectorAll(`input[name="q_${idx}"]:checked`);
-      answers[idx] = Array.from(checked).map(c => Number(c.value));
-    } else if (type === "short_answer" || type === "paragraph" || type === "numeric") {
+      answers[qKey] = Array.from(checked).map(c => isNaN(c.value) ? c.value : Number(c.value));
+    } else if (type === "short_answer") {
       const el = container.querySelector(`[name="q_${idx}"]`);
-      answers[idx] = el ? el.value.trim() : "";
+      answers[qKey] = el ? el.value.trim() : "";
+    } else if (type === "numeric") {
+      const el = container.querySelector(`[name="q_${idx}"]`);
+      answers[qKey] = el && el.value.trim() !== "" ? Number(el.value.trim()) : 0;
+    } else if (type === "matching") {
+      const matchMap = {};
+      const inputs = container.querySelectorAll(`[name^="q_${idx}_match_"]`);
+      inputs.forEach(inp => {
+        const leftKey = inp.dataset.left || inp.getAttribute("data-left");
+        if (leftKey) {
+          matchMap[leftKey] = inp.value.trim();
+        }
+      });
+      answers[qKey] = matchMap;
+    } else if (type === "ordering") {
+      const items = container.querySelectorAll(`#orderList_${idx} .ordering-item`);
+      answers[qKey] = Array.from(items).map(el => el.dataset.item);
     } else {
-      answers[idx] = "completed";
+      const el = container.querySelector(`[name="q_${idx}"]`);
+      answers[qKey] = el ? el.value.trim() : "";
     }
   });
   return answers;
@@ -932,7 +996,7 @@ function collectQuizAnswers(questions, container) {
 /**
  * Practice Sets Interactive Player with Hints & Scratchpad Canvas
  */
-export function openPracticeSetModal(setId) {
+export async function openPracticeSetModal(setId) {
   let modal = document.getElementById("practiceSetModalOverlay");
   if (!modal) {
     modal = document.createElement("div");
@@ -942,40 +1006,50 @@ export function openPracticeSetModal(setId) {
   }
 
   modal.innerHTML = `
-    <div class="modal-card practice-set-card">
-      <div class="practice-header">
-        <div class="practice-title-box">
-          <span class="practice-icon">💡</span>
-          <h3>Интерактивный практикум</h3>
+    <div class="modal-card practice-set-card" style="max-width:850px; width:95%; max-height:90vh; overflow-y:auto; padding:20px; background:#fff; border-radius:12px;">
+      <div class="practice-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div class="practice-title-box" style="display:flex; align-items:center; gap:8px;">
+          <span class="practice-icon" style="font-size:1.4rem;">💡</span>
+          <h3 id="psModalTitle" style="margin:0;">Интерактивный практикум</h3>
         </div>
         <button class="modal-close-btn" id="closePracticeSetBtn">&times;</button>
       </div>
+      <div id="psModalLoading" style="text-align:center; padding:30px;">Загрузка практикума...</div>
+      <div id="psModalContent" style="display:none;" class="practice-body">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div class="task-number-badge" id="psCardBadge" style="font-weight:700; background:#e8f0fe; color:#1967d2; padding:4px 10px; border-radius:12px; font-size:0.85rem;">Задача 1</div>
+          <div id="psCardCounter" style="font-size:0.85rem; color:#666;"></div>
+        </div>
+        <div class="practice-task-card" style="margin-bottom:16px; border:1px solid #e0e0e0; border-radius:8px; padding:16px; background:#fafafa;">
+          <div class="task-prompt" id="taskPrompt" style="font-size:1.05rem; margin-bottom:16px; line-height:1.5;"></div>
 
-      <div class="practice-body">
-        <div class="practice-task-card">
-          <div class="task-number-badge">Задача 1</div>
-          <div class="task-prompt" id="taskPrompt">Найдите значение выражения при x = 4...</div>
-
-          <div class="task-answer-row">
+          <div class="task-answer-row" style="display:flex; gap:8px; margin-bottom:12px;">
             <input type="text" id="practiceAnswerInput" class="form-control" placeholder="Введите ответ..." />
             <button type="button" class="btn btn-primary" id="checkCardBtn">Проверить шаг</button>
           </div>
 
+          <div id="psFeedbackArea" style="margin-bottom:12px; font-weight:600; display:none;"></div>
+
           <div class="practice-hints-box">
             <button type="button" class="btn btn-sm btn-secondary" id="revealHintBtn">💡 Получить подсказку</button>
-            <div id="hintContentArea" class="hint-content-area" style="display: none;"></div>
+            <div id="hintContentArea" class="hint-content-area" style="display: none; margin-top:8px;"></div>
           </div>
         </div>
 
         <!-- Scratchpad Canvas Area -->
-        <div class="scratchpad-box">
-          <div class="scratchpad-toolbar">
-            <span class="scratchpad-title">Черновик решения (холст):</span>
+        <div class="scratchpad-box" style="border:1px solid #e0e0e0; border-radius:8px; padding:12px; background:#fff;">
+          <div class="scratchpad-toolbar" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <span class="scratchpad-title" style="font-weight:600; font-size:0.85rem;">Черновик решения (холст):</span>
             <button type="button" class="btn btn-sm btn-secondary" id="scratchPenBtn">✏️ Карандаш</button>
             <button type="button" class="btn btn-sm btn-secondary" id="scratchEraserBtn">🧹 Ластик</button>
             <button type="button" class="btn btn-sm btn-secondary" id="scratchClearBtn">Очистить</button>
           </div>
-          <canvas id="scratchpadCanvas" width="800" height="300" class="scratchpad-canvas"></canvas>
+          <canvas id="scratchpadCanvas" width="800" height="260" class="scratchpad-canvas" style="border:1px dashed #ccc; width:100%; max-width:800px; display:block; cursor:crosshair;"></canvas>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+          <button type="button" class="btn btn-secondary" id="psPrevBtn">← Предыдущая</button>
+          <button type="button" class="btn btn-secondary" id="psNextBtn">Следующая →</button>
         </div>
       </div>
     </div>
@@ -983,44 +1057,267 @@ export function openPracticeSetModal(setId) {
 
   modal.style.display = "flex";
 
-  document.getElementById("closePracticeSetBtn")?.addEventListener("click", () => {
+  const close = () => {
     modal.style.display = "none";
-  });
+    modal.innerHTML = "";
+  };
+  document.getElementById("closePracticeSetBtn")?.addEventListener("click", close);
 
-  // Setup Scratchpad Canvas
-  setupScratchpad(document.getElementById("scratchpadCanvas"));
+  let setData = null;
+  try {
+    setData = await v1Fetch(`/api/classroom/practice-sets/${setId}`);
+  } catch (err) {
+    document.getElementById("psModalLoading").innerHTML = `<div style="color:red;">Ошибка загрузки: ${escapeHtml(err.message)}</div>`;
+    return;
+  }
 
-  // Hints progressive reveal
-  const hints = [
-    "Подсказка 1: Вспомните формулу сокращенного умножения (a+b)² = a² + 2ab + b².",
-    "Подсказка 2: Подставьте сначала x в скобки, затем раскройте степени.",
-    "Подсказка 3: Итоговое решение: (4 + 3)² = 7² = 49."
-  ];
+  document.getElementById("psModalLoading").style.display = "none";
+  document.getElementById("psModalContent").style.display = "block";
+  document.getElementById("psModalTitle").textContent = setData.set_title || "Интерактивный практикум";
+
+  let cards = setData.cards || [];
+  if (typeof setData.cards_json === "string" && cards.length === 0) {
+    try { cards = JSON.parse(setData.cards_json); } catch {}
+  }
+  if (!Array.isArray(cards) || cards.length === 0) {
+    document.getElementById("psModalContent").innerHTML = `<div style="padding:20px; text-align:center;">В этом практикуме пока нет карточек с заданиями.</div>`;
+    return;
+  }
+
+  let currentIdx = 0;
   let hintIdx = 0;
-  const hintBtn = document.getElementById("revealHintBtn");
-  const hintArea = document.getElementById("hintContentArea");
+  const canvas = document.getElementById("scratchpadCanvas");
+  setupScratchpad(canvas);
 
-  hintBtn?.addEventListener("click", () => {
+  const renderCurrentCard = () => {
+    hintIdx = 0;
+    const card = cards[currentIdx];
+    document.getElementById("psCardBadge").textContent = `Задача ${currentIdx + 1}`;
+    document.getElementById("psCardCounter").textContent = `${currentIdx + 1} из ${cards.length}`;
+    document.getElementById("taskPrompt").innerHTML = escapeHtml(card.prompt || "Без текста задания");
+    document.getElementById("practiceAnswerInput").value = "";
+    
+    const feedbackArea = document.getElementById("psFeedbackArea");
+    feedbackArea.style.display = "none";
+    feedbackArea.innerHTML = "";
+
+    const hintBtn = document.getElementById("revealHintBtn");
+    const hintArea = document.getElementById("hintContentArea");
+    hintArea.innerHTML = "";
+    hintArea.style.display = "none";
+    const hints = Array.isArray(card.hints) ? card.hints : [];
+    if (hints.length === 0) {
+      hintBtn.style.display = "none";
+    } else {
+      hintBtn.style.display = "inline-block";
+      hintBtn.disabled = false;
+      hintBtn.textContent = `💡 Получить подсказку (${hints.length})`;
+    }
+
+    document.getElementById("psPrevBtn").disabled = (currentIdx === 0);
+    document.getElementById("psNextBtn").disabled = (currentIdx === cards.length - 1);
+  };
+
+  document.getElementById("revealHintBtn")?.addEventListener("click", () => {
+    const card = cards[currentIdx];
+    const hints = Array.isArray(card.hints) ? card.hints : [];
+    const hintBtn = document.getElementById("revealHintBtn");
+    const hintArea = document.getElementById("hintContentArea");
     if (hintIdx < hints.length) {
       hintArea.style.display = "block";
-      const p = document.createElement("p");
-      p.className = "hint-item";
-      p.textContent = hints[hintIdx++];
+      const p = document.createElement("div");
+      p.style.padding = "6px 10px";
+      p.style.marginBottom = "4px";
+      p.style.background = "#fff8e1";
+      p.style.borderRadius = "4px";
+      p.style.fontSize = "0.9rem";
+      p.textContent = `💡 Подсказка ${hintIdx + 1}: ${hints[hintIdx++]}`;
       hintArea.appendChild(p);
       if (hintIdx >= hints.length) {
         hintBtn.disabled = true;
         hintBtn.textContent = "Все подсказки открыты";
+      } else {
+        hintBtn.textContent = `💡 Ещё подсказка (${hints.length - hintIdx} ост.)`;
       }
     }
   });
 
-  // Check card
-  document.getElementById("checkCardBtn")?.addEventListener("click", () => {
+  document.getElementById("checkCardBtn")?.addEventListener("click", async () => {
+    const card = cards[currentIdx];
     const val = document.getElementById("practiceAnswerInput")?.value.trim();
-    if (val === "49") {
-      alert("Верно! Отличная работа!");
-    } else {
-      alert("Ответ не совпадает. Попробуйте воспользоваться подсказкой или перепроверить в черновике.");
+    if (!val) {
+      alert("Введите ваш ответ");
+      return;
+    }
+    const feedbackArea = document.getElementById("psFeedbackArea");
+    try {
+      const res = await v1Fetch(`/api/classroom/practice-sets/${setId}/check-card`, {
+        method: "POST",
+        body: {
+          card_id: String(card.id || currentIdx),
+          answer: val,
+          used_hint: hintIdx > 0,
+          scratchpad_json: null
+        }
+      });
+      feedbackArea.style.display = "block";
+      if (res.correct) {
+        feedbackArea.style.color = "#2e7d32";
+        feedbackArea.innerHTML = `✅ Верно! Отличная работа!` + (res.explanation ? `<div style="font-weight:normal; margin-top:4px;">${escapeHtml(res.explanation)}</div>` : "");
+      } else {
+        feedbackArea.style.color = "#c62828";
+        feedbackArea.innerHTML = `❌ Ответ не совпадает. Попробуйте воспользоваться подсказкой или перепроверить в черновике.`;
+      }
+    } catch (e) {
+      alert("Ошибка при проверке: " + e.message);
+    }
+  });
+
+  document.getElementById("psPrevBtn")?.addEventListener("click", () => {
+    if (currentIdx > 0) {
+      currentIdx--;
+      renderCurrentCard();
+    }
+  });
+
+  document.getElementById("psNextBtn")?.addEventListener("click", () => {
+    if (currentIdx < cards.length - 1) {
+      currentIdx++;
+      renderCurrentCard();
+    }
+  });
+
+  renderCurrentCard();
+}
+
+/**
+ * Practice Set Creator Modal
+ */
+export function openPracticeSetCreator(courseId, onReload) {
+  let modal = document.getElementById("practiceSetCreatorOverlay");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "practiceSetCreatorOverlay";
+    modal.className = "modal-overlay full-screen-modal-overlay";
+    document.body.appendChild(modal);
+  }
+
+  let cards = [
+    { id: "c1", prompt: "", answer: "", hints: [] }
+  ];
+
+  const renderCards = () => {
+    const listEl = document.getElementById("pscCardsList");
+    if (!listEl) return;
+    listEl.innerHTML = cards.map((c, idx) => `
+      <div class="psc-card-item" style="border:1px solid #ddd; border-radius:8px; padding:12px; margin-bottom:12px; background:#fff;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <strong>Карточка ${idx + 1}</strong>
+          ${cards.length > 1 ? `<button type="button" class="btn btn-sm btn-danger psc-remove-card" data-idx="${idx}">Удалить</button>` : ""}
+        </div>
+        <div style="margin-bottom:8px;">
+          <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:4px;">Вопрос / Задание:</label>
+          <textarea class="form-control psc-prompt" data-idx="${idx}" rows="2" placeholder="Условие задачи...">${escapeHtml(c.prompt || "")}</textarea>
+        </div>
+        <div style="margin-bottom:8px;">
+          <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:4px;">Правильный ответ:</label>
+          <input type="text" class="form-control psc-answer" data-idx="${idx}" value="${escapeHtml(c.answer || "")}" placeholder="Ответ (число или точный текст)..." />
+        </div>
+        <div>
+          <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:4px;">Подсказки (через новую строку):</label>
+          <textarea class="form-control psc-hints" data-idx="${idx}" rows="2" placeholder="Подсказка 1&#10;Подсказка 2">${escapeHtml((c.hints || []).join("\n"))}</textarea>
+        </div>
+      </div>
+    `).join("");
+
+    listEl.querySelectorAll(".psc-remove-card").forEach(btn => {
+      btn.onclick = () => {
+        const i = Number(btn.dataset.idx);
+        cards.splice(i, 1);
+        renderCards();
+      };
+    });
+
+    listEl.querySelectorAll(".psc-prompt").forEach(ta => {
+      ta.onchange = () => { cards[Number(ta.dataset.idx)].prompt = ta.value; };
+    });
+    listEl.querySelectorAll(".psc-answer").forEach(inp => {
+      inp.onchange = () => { cards[Number(inp.dataset.idx)].answer = inp.value; };
+    });
+    listEl.querySelectorAll(".psc-hints").forEach(ta => {
+      ta.onchange = () => {
+        cards[Number(ta.dataset.idx)].hints = ta.value.split("\n").map(s => s.trim()).filter(Boolean);
+      };
+    });
+  };
+
+  modal.innerHTML = `
+    <div class="modal-card" style="max-width:700px; max-height:90vh; overflow-y:auto; padding:24px; background:#fff; border-radius:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0;">Создать интерактивный практикум (Practice Set)</h3>
+        <button type="button" class="modal-close-btn" id="closePracticeSetCreatorBtn">&times;</button>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block; font-weight:600; margin-bottom:4px;">Название практикума:</label>
+        <input type="text" id="pscTitleInput" class="form-control" placeholder="Например: Квадратные уравнения. Базовый уровень" />
+      </div>
+      <div id="pscCardsList"></div>
+      <div style="display:flex; gap:8px; margin-bottom:20px;">
+        <button type="button" class="btn btn-secondary" id="pscAddCardBtn">+ Добавить карточку</button>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn btn-secondary" id="pscCancelBtn">Отмена</button>
+        <button type="button" class="btn btn-primary" id="pscSaveBtn">Сохранить практикум</button>
+      </div>
+    </div>
+  `;
+
+  modal.style.display = "flex";
+  renderCards();
+
+  const close = () => {
+    modal.style.display = "none";
+    modal.innerHTML = "";
+  };
+
+  document.getElementById("closePracticeSetCreatorBtn")?.addEventListener("click", close);
+  document.getElementById("pscCancelBtn")?.addEventListener("click", close);
+
+  document.getElementById("pscAddCardBtn")?.addEventListener("click", () => {
+    cards.push({ id: "c" + (cards.length + 1), prompt: "", answer: "", hints: [] });
+    renderCards();
+  });
+
+  document.getElementById("pscSaveBtn")?.addEventListener("click", async () => {
+    const title = document.getElementById("pscTitleInput")?.value.trim();
+    if (!title) {
+      alert("Укажите название практикума");
+      return;
+    }
+    // sync any current inputs
+    document.querySelectorAll(".psc-prompt").forEach(ta => {
+      cards[Number(ta.dataset.idx)].prompt = ta.value.trim();
+    });
+    document.querySelectorAll(".psc-answer").forEach(inp => {
+      cards[Number(inp.dataset.idx)].answer = inp.value.trim();
+    });
+    document.querySelectorAll(".psc-hints").forEach(ta => {
+      cards[Number(ta.dataset.idx)].hints = ta.value.split("\n").map(s => s.trim()).filter(Boolean);
+    });
+
+    try {
+      await v1Fetch("/api/classroom/practice-sets", {
+        method: "POST",
+        body: {
+          class_id: Number(courseId),
+          set_title: title,
+          cards_json: JSON.stringify(cards)
+        }
+      });
+      close();
+      if (typeof onReload === "function") onReload();
+    } catch (e) {
+      alert("Ошибка при сохранении практикума: " + e.message);
     }
   });
 }

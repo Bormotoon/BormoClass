@@ -179,9 +179,9 @@ export class GradebookPeriodsView {
     const sou = document.getElementById("gbMetricSou");
     const type = document.getElementById("gbMetricCalcType");
 
-    if (usp) usp.textContent = `${analytics.usp_percent ?? 0}%`;
-    if (kz) kz.textContent = `${analytics.kz_percent ?? 0}%`;
-    if (sou) sou.textContent = `${analytics.sou_percent ?? 0}%`;
+    if (usp) usp.textContent = `${analytics.usp ?? analytics.usp_percent ?? 0}%`;
+    if (kz) kz.textContent = `${analytics.kz ?? analytics.kz_percent ?? 0}%`;
+    if (sou) sou.textContent = `${analytics.sou ?? analytics.sou_percent ?? 0}%`;
     if (type) type.textContent = calcType === "WEIGHTED_CATEGORIES" ? "Весовые категории" : "Сумма баллов";
   }
 
@@ -390,7 +390,7 @@ export class GradebookPeriodsView {
 
   async saveExcused(courseworkId, studentId, isExcused) {
     try {
-      await fetch(`/coursework/${courseworkId}/submissions/${studentId}/excuse`, {
+      await fetch(`/api/classroom/coursework/${courseworkId}/submissions/${studentId}/excuse`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ is_excused: isExcused }),
