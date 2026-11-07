@@ -508,4 +508,14 @@ body {
     padding: 1cm;
     border-radius: 4px;
   }
+  .main-content, #toastContainer, #modalContainer, .main-drawer, .drawer-backdrop {
+    display: none !important;
+  }
+  #printArea {
+    display: block !important;
+  }
+}
+
+#printArea {
+  display: none;
 }

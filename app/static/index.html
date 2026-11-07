@@ -12,9 +12,12 @@
 <body>
   <!-- Top App Bar -->
   <header class="top-app-bar">
-    <div class="brand" id="brandBtn">
-      <div class="brand-logo">B</div>
-      <div class="brand-title">BormoClass</div>
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <button class="btn btn-secondary icon-btn" id="drawerToggleBtn" title="Главное меню" aria-label="Меню" style="font-size: 1.25rem; padding: 0.4rem 0.75rem; cursor: pointer; display: none;">☰</button>
+      <div class="brand" id="brandBtn">
+        <div class="brand-logo">B</div>
+        <div class="brand-title">BormoClass</div>
+      </div>
     </div>
 
     <div class="top-bar-actions" id="userBar">
@@ -37,6 +40,9 @@
     <button class="nav-tab-btn" data-view="calendar" id="navCalendarBtn">
       <span>Календарь</span>
     </button>
+    <button class="nav-tab-btn" data-view="admin" id="navAdminBtn" style="display: none;">
+      <span>Админ</span>
+    </button>
   </nav>
 
   <!-- Main Content Container -->
@@ -48,6 +54,9 @@
 
   <!-- Modals and Overlay Container -->
   <div id="modalContainer"></div>
+
+  <!-- Print Area (Only visible during window.print()) -->
+  <div id="printArea"></div>
 
   <!-- Scripts -->
   <script src="/static/js/e2ee-crypto.js"></script>

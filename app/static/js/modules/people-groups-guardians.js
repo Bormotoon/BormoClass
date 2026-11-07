@@ -6,7 +6,7 @@
  * Zero external CDN dependencies. Zero-PII compliant.
  */
 
-import { v1Fetch } from "./api-v1.js";
+import { v1Fetch, escapeHtml } from "./api-v1.js";
 import { getUserSvgAvatar } from "./home-and-drawer.js";
 
 /**
@@ -124,7 +124,7 @@ export function renderTeachersSection(container, courseId, teachers = [], user =
           <div class="roster-user-item teacher-item" data-id="${t.userId}">
             <div class="user-avatar-cell">${getUserSvgAvatar(t.profile?.handle || "Учитель", 36)}</div>
             <div class="user-info-cell">
-              <span class="user-handle">${t.profile?.handle || "Преподаватель"}</span>
+              <span class="user-handle">${escapeHtml(t.profile?.handle || "Преподаватель")}</span>
               ${idx === 0 ? `<span class="badge badge-owner">Владелец курса</span>` : ""}
             </div>
             ${(isOwnerOrAdmin && idx !== 0) ? `
@@ -341,13 +341,13 @@ function renderStudentsListTable(container, courseId, students = [], members = [
               <td class="student-name-cell" data-id="${s.userId}">
                 <div class="cell-flex">
                   ${getUserSvgAvatar(s.profile?.handle || "S", 30)}
-                  <span class="student-handle-link" title="Нажмите, чтобы открыть досье">${s.profile?.handle || "Ученик"}</span>
+                  <span class="student-handle-link" title="Нажмите, чтобы открыть досье">${escapeHtml(s.profile?.handle || "Ученик")}</span>
                 </div>
               </td>
               <td>${seatNum}</td>
               <td><span class="badge badge-presence">${isPresent}</span></td>
               <td style="text-align: right;">
-                <button class="btn btn-sm btn-secondary open-dossier-btn" data-id="${s.userId}" data-handle="${s.profile?.handle}">Досье</button>
+                <button class="btn btn-sm btn-secondary open-dossier-btn" data-id="${s.userId}" data-handle="${escapeHtml(s.profile?.handle || "")}">Досье</button>
                 ${isTeacher ? `
                   <button class="btn btn-sm btn-secondary invite-guardian-btn" data-id="${s.userId}" title="Код привязки опекуна">Опекун</button>
                 ` : ""}
@@ -446,12 +446,12 @@ function renderSingleSeat(seat, courseId) {
   const trafficLight = m?.traffic_light || "green";
 
   return `
-    <div class="classroom-seat ${occupied ? 'occupied' : 'empty'}" data-seat-num="${seat.number}" data-student-id="${m?.student_id || ''}" data-handle="${handle}">
+    <div class="classroom-seat ${occupied ? 'occupied' : 'empty'}" data-seat-num="${seat.number}" data-student-id="${m?.student_id || ''}" data-handle="${escapeHtml(handle)}">
       <div class="seat-badge-num">№${seat.number}</div>
       ${occupied ? `
         <div class="seat-occupant">
           <span class="traffic-dot dot-${trafficLight}"></span>
-          <span class="seat-student-name" title="${handle}">${handle}</span>
+          <span class="seat-student-name" title="${escapeHtml(handle)}">${escapeHtml(handle)}</span>
         </div>
       ` : `
         <div class="seat-vacant">Свободно</div>
@@ -480,7 +480,7 @@ export function openStudentDossierModal(courseId, student = {}, options = {}) {
         <div class="dossier-user-row">
           ${getUserSvgAvatar(sHandle, 48)}
           <div>
-            <h3 class="dossier-name">${sHandle}</h3>
+            <h3 class="dossier-name">${escapeHtml(sHandle)}</h3>
             <div class="dossier-subtext">Личная карточка успеваемости (Zero-PII)</div>
           </div>
         </div>
@@ -540,7 +540,7 @@ function renderDossierWorksList(container, works = [], filter = "ALL") {
         <div class="dossier-work-row">
           <div class="work-title-cell">
             <span class="work-type-icon">📝</span>
-            <span class="work-title">${w.title}</span>
+            <span class="work-title">${escapeHtml(w.title)}</span>
           </div>
           <div class="work-due-cell">${w.dueDate ? `${w.dueDate.year}-${w.dueDate.month}-${w.dueDate.day}` : "Без срока"}</div>
           <div class="work-status-cell">
@@ -597,7 +597,7 @@ export function renderStudentGroupsPanel(container, courseId, user = null, optio
           ${groups.map(g => `
             <div class="group-card">
               <div class="group-card-header">
-                <h4 class="group-name">${g.name || g.title}</h4>
+                <h4 class="group-name">${escapeHtml(g.name || g.title)}</h4>
                 ${isTeacher ? `<button class="btn-group-del" data-id="${g.id}">&times;</button>` : ""}
               </div>
               <div class="group-members-count">Участников: ${g.member_count || 0}</div>

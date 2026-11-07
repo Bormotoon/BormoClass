@@ -5,6 +5,7 @@
  */
 
 import { ICONS, getIcon } from "./icons.js";
+import { escapeHtml } from "./modules/api-v1.js";
 
 import * as ApiV1 from "./modules/api-v1.js";
 import * as HomeDrawer from "./modules/home-and-drawer.js";
@@ -170,6 +171,27 @@ class BormoClassApp {
       window.location.hash = "#classes";
     });
 
+    const drawerToggleBtn = document.getElementById("drawerToggleBtn");
+    if (drawerToggleBtn) {
+      drawerToggleBtn.addEventListener("click", () => {
+        HomeDrawer.drawerNav.render(
+          {
+            user: this.user,
+            teachingCourses: (this.classes || []).filter((c) => c.is_teacher),
+            enrolledCourses: (this.classes || []).filter((c) => !c.is_teacher),
+            toReviewCount: 0,
+            toDoCount: 0,
+            currentHash: window.location.hash || "#classes",
+          },
+          (hash) => {
+            window.location.hash = hash;
+            HomeDrawer.drawerNav.close();
+          }
+        );
+        HomeDrawer.drawerNav.toggle();
+      });
+    }
+
     document.querySelectorAll(".nav-tab-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const view = btn.dataset.view;
@@ -207,13 +229,27 @@ class BormoClassApp {
     bar.innerHTML = `
       ${roleBadge}
       ${recessBadge}
+      <button class="btn btn-secondary" id="notifBellBtn" title="Уведомления" style="position: relative; padding: 0.4rem 0.6rem;">
+        🔔
+        <span class="badge" id="notifBadge" style="display: none; position: absolute; top: -4px; right: -4px; background: #b3261e; color: #fff; font-size: 0.7rem; padding: 2px 5px; border-radius: 10px;">0</span>
+      </button>
       <div id="userPassportChip" style="cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.6rem; border-radius: 999px; background: var(--md-sys-color-surface-container); border: 1px solid var(--md-sys-color-outline-variant);" title="Открыть Паспорт и карточку героя">
         <span id="userBarAvatar"></span>
-        <span style="font-weight: 700; font-size: 0.9rem;">${this.user.handle}</span>
+        <span style="font-weight: 700; font-size: 0.9rem;">${escapeHtml(this.user.handle)}</span>
       </div>
       <button class="btn btn-secondary" id="themeBtn" title="Переключить тему">${getIcon("sun")}</button>
       <button class="btn btn-secondary" id="logoutBtn" title="Выйти">${getIcon("logout")}</button>
     `;
+
+    const bellEl = document.getElementById("notifBellBtn");
+    const badgeEl = document.getElementById("notifBadge");
+    if (bellEl) {
+      this.notificationCenter = new GlobalCalendarAdmin.NotificationCenter({
+        bellElement: bellEl,
+        badgeElement: badgeEl,
+      });
+      this.notificationCenter.init();
+    }
 
     const avaContainer = document.getElementById("userBarAvatar");
     if (avaContainer && window.pbPassport) {
@@ -243,15 +279,21 @@ class BormoClassApp {
 
   renderNavigation() {
     const nav = document.getElementById("navRail");
+    const drawerBtn = document.getElementById("drawerToggleBtn");
     if (!this.user) {
       nav.style.display = "none";
+      if (drawerBtn) drawerBtn.style.display = "none";
       return;
     }
     nav.style.display = "flex";
+    if (drawerBtn) drawerBtn.style.display = "inline-block";
 
     const isTeacher = this.user.role === "teacher" || this.user.role === "admin";
+    const isAdmin = this.user.role === "admin";
     document.getElementById("navToReviewBtn").style.display = isTeacher ? "inline-flex" : "none";
     document.getElementById("navToDoBtn").style.display = isTeacher ? "none" : "inline-flex";
+    const navAdminBtn = document.getElementById("navAdminBtn");
+    if (navAdminBtn) navAdminBtn.style.display = (isAdmin || isTeacher) ? "inline-flex" : "none";
 
     // Update active state
     document.querySelectorAll(".nav-tab-btn").forEach((btn) => {
@@ -283,6 +325,9 @@ class BormoClassApp {
     } else if (mainView === "calendar") {
       this.currentView = "calendar";
       this.renderCalendarView();
+    } else if (mainView === "admin") {
+      this.currentView = "admin";
+      this.renderAdminView();
     } else {
       this.currentView = "classes";
       this.renderClassesList();
@@ -574,12 +619,12 @@ class BormoClassApp {
           (c) => `
         <div class="class-card" data-class-id="${c.id}">
           <div class="class-card-header">
-            <div class="class-card-title">${c.title}</div>
-            <div style="font-size: 0.85rem; opacity: 0.9;">${c.grade_level} класс • Предмет: ${c.subject_code}</div>
+            <div class="class-card-title">${escapeHtml(c.title)}</div>
+            <div style="font-size: 0.85rem; opacity: 0.9;">${escapeHtml(c.grade_level)} класс • Предмет: ${escapeHtml(c.subject_code)}</div>
           </div>
           <div class="class-card-body">
             <p style="font-size: 0.9rem; color: var(--md-sys-color-on-surface-variant);">
-              ${c.quarter_goal ? `«${c.quarter_goal}»` : "Цель на четверть не задана"}
+              ${c.quarter_goal ? `«${escapeHtml(c.quarter_goal)}»` : "Цель на четверть не задана"}
             </p>
             ${
               c.seat_number
@@ -589,7 +634,7 @@ class BormoClassApp {
           </div>
           <div class="class-card-footer">
             <span>Учеников: ${c.students_count}</span>
-            <span style="font-family: var(--font-mono); font-weight: 700;">Пин: ${c.join_pin}</span>
+            <span style="font-family: var(--font-mono); font-weight: 700;">Пин: ${escapeHtml(c.join_pin)}</span>
           </div>
         </div>
       `
@@ -826,13 +871,13 @@ class BormoClassApp {
     main.innerHTML = `
       <div class="class-hero-banner">
         <div>
-          <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem;">${cls.title}</h1>
-          <p style="opacity: 0.9;">${cls.grade_level} класс • ${cls.quarter_goal ? `«${cls.quarter_goal}»` : ""}</p>
+          <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem;">${escapeHtml(cls.title)}</h1>
+          <p style="opacity: 0.9;">${escapeHtml(cls.grade_level)} класс • ${cls.quarter_goal ? `«${escapeHtml(cls.quarter_goal)}»` : ""}</p>
         </div>
         <div style="display: flex; align-items: center; gap: 1rem;">
           <div class="class-hero-pin-box">
             <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; opacity: 0.8;">Пин класса</div>
-            <div class="class-hero-pin-val">${cls.join_pin}</div>
+            <div class="class-hero-pin-val">${escapeHtml(cls.join_pin)}</div>
           </div>
           <button class="btn btn-secondary" id="openBoardBtn" style="height: 52px; font-weight: 700;">
             ${getIcon("board")} Интерактивная доска
@@ -1003,10 +1048,10 @@ class BormoClassApp {
         (it) => `
       <div style="background: var(--md-sys-color-surface-container-lowest); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-          <h4 style="font-size: 1.1rem;">${it.title}</h4>
-          <span class="badge ${it.kind === "announcement" ? "badge-tag" : "badge-recess"}">${it.kind}</span>
+          <h4 style="font-size: 1.1rem;">${escapeHtml(it.title)}</h4>
+          <span class="badge ${it.kind === "announcement" ? "badge-tag" : "badge-recess"}">${escapeHtml(it.kind)}</span>
         </div>
-        <p style="font-size: 0.9rem; color: var(--md-sys-color-on-surface-variant); white-space: pre-wrap;">${it.instructions || ""}</p>
+        <p style="font-size: 0.9rem; color: var(--md-sys-color-on-surface-variant); white-space: pre-wrap;">${escapeHtml(it.instructions || "")}</p>
       </div>
     `
       )
@@ -1052,9 +1097,9 @@ class BormoClassApp {
         (it) => `
       <div style="background: var(--md-sys-color-surface-container-lowest); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <h4 style="font-size: 1.1rem; margin-bottom: 0.25rem;">${it.title}</h4>
+          <h4 style="font-size: 1.1rem; margin-bottom: 0.25rem;">${escapeHtml(it.title)}</h4>
           <div style="font-size: 0.85rem; color: var(--md-sys-color-on-surface-variant);">
-            ${it.topic_title ? `Тема: ${it.topic_title} • ` : ""}
+            ${it.topic_title ? `Тема: ${escapeHtml(it.topic_title)} • ` : ""}
             Макс. балл: ${it.max_points} • Награда: ${Math.floor(it.recess_reward / 60)} мин перемены
           </div>
         </div>
@@ -1285,7 +1330,7 @@ class BormoClassApp {
         <div class="seat-traffic-dot ${trafficClass}"></div>
       </div>
       <div id="seatName_${member.student_id}" style="font-weight: 600; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 90px;">
-        ${member.handle}
+        ${escapeHtml(member.handle)}
       </div>
     `;
 
@@ -1307,7 +1352,7 @@ class BormoClassApp {
           <div style="display: flex; flex-direction: column; gap: 1rem;">
             <div>
               <label style="font-size: 0.85rem; font-weight: 600;">Позывной ученика</label>
-              <div style="font-weight: 800; font-size: 1.1rem; color: var(--md-sys-color-primary);">${member.handle}</div>
+              <div style="font-weight: 800; font-size: 1.1rem; color: var(--md-sys-color-primary);">${escapeHtml(member.handle)}</div>
             </div>
             <div>
               <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600;">
@@ -1380,8 +1425,11 @@ class BormoClassApp {
     const m = data.analytics;
 
     container.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h3>Живая ведомость оценок</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <h3 style="margin: 0;">Живая ведомость оценок</h3>
+          <button class="btn btn-secondary" id="togglePeriodsBtn">📅 Журнал по периодам</button>
+        </div>
         <button class="btn btn-secondary" id="exportCsvBtn">${getIcon("download")} Экспорт CSV</button>
       </div>
 
@@ -1415,7 +1463,7 @@ class BormoClassApp {
             <tr>
               <th style="min-width: 60px;">Парта</th>
               <th style="min-width: 140px;">Позывной</th>
-              ${data.coursework.map((cw) => `<th style="text-align: center; min-width: 100px;">${cw.title}</th>`).join("")}
+              ${data.coursework.map((cw) => `<th style="text-align: center; min-width: 100px;">${escapeHtml(cw.title)}</th>`).join("")}
             </tr>
           </thead>
           <tbody>
@@ -1424,7 +1472,7 @@ class BormoClassApp {
                 (st) => `
               <tr>
                 <td style="font-weight: 700;">№${st.seat_number}</td>
-                <td id="mStudentName_${st.student_id}">${st.handle}</td>
+                <td id="mStudentName_${st.student_id}">${escapeHtml(st.handle)}</td>
                 ${data.coursework
                   .map((cw) => {
                     const sub = data.submissions[`${cw.id}_${st.student_id}`];
@@ -1444,10 +1492,25 @@ class BormoClassApp {
 
     document.getElementById("exportCsvBtn").onclick = () => this.exportCsv(data);
 
+    const togglePeriodsBtn = document.getElementById("togglePeriodsBtn");
+    if (togglePeriodsBtn) {
+      togglePeriodsBtn.onclick = () => {
+        new GradebookPeriods.GradebookPeriodsView({
+          container,
+          classId: cls.id,
+        }).render();
+      };
+    }
+
     if (cls.is_teacher) {
       document.querySelectorAll(".gradebook-cell").forEach((cell) => {
         cell.onclick = () => {
-          this.showGradingModal(cls.id, cell.dataset.cwid, cell.dataset.sid);
+          SpeedGrader.openSpeedGrader({
+            classId: cls.id,
+            courseworkId: Number(cell.dataset.cwid),
+            studentId: Number(cell.dataset.sid),
+            onClose: () => this.renderGradesTab(cls),
+          });
         };
       });
     }
@@ -1476,12 +1539,28 @@ class BormoClassApp {
               <label style="font-size: 0.85rem; font-weight: 600;">Комментарий учителя (сохраняется в банк)</label>
               <input type="text" id="teacherCommentInput" placeholder="Отличная работа!" class="btn-secondary" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant);">
             </div>
+            <div style="margin-top: 0.5rem;">
+              <button class="btn btn-secondary" id="openSgFromModalBtn" style="width: 100%;">🔍 Открыть в SpeedGrader</button>
+            </div>
           </div>
         </div>
       </div>
     `;
 
     document.getElementById("closeGradingModal").onclick = () => (modal.innerHTML = "");
+
+    const sgBtn = document.getElementById("openSgFromModalBtn");
+    if (sgBtn) {
+      sgBtn.onclick = () => {
+        modal.innerHTML = "";
+        SpeedGrader.openSpeedGrader({
+          classId: classId,
+          courseworkId: Number(courseworkId),
+          studentId: Number(studentId),
+          onClose: () => this.renderGradesTab({ id: classId, is_teacher: true }),
+        });
+      };
+    }
 
     document.querySelectorAll(".grade-btn").forEach((btn) => {
       btn.onclick = async () => {
@@ -1549,132 +1628,126 @@ class BormoClassApp {
 
   async renderToReviewView() {
     const main = document.getElementById("appMain");
-    main.innerHTML = `<h2>На проверку (Все сданные работы)</h2><div id="toReviewList">Загрузка...</div>`;
-
-    const res = await fetch("/api/classroom/global/to-review");
-    const items = res.ok ? await res.json() : [];
-
-    const list = document.getElementById("toReviewList");
-    if (items.length === 0) {
-      list.innerHTML = `<div style="text-align: center; padding: 3rem; background: var(--md-sys-color-surface-container-low); border-radius: 16px; margin-top: 1rem;">Все работы проверены! Отличная работа.</div>`;
-      return;
-    }
-
-    list.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
-        ${items
-          .map(
-            (it) => `
-          <div style="background: var(--md-sys-color-surface-container-lowest); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 16px; padding: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <div style="font-weight: 700; font-size: 1.1rem;">${it.coursework_title}</div>
-              <div style="font-size: 0.85rem; color: var(--md-sys-color-on-surface-variant);">
-                Класс: ${it.class_title} • Парта №${it.seat_number}: ${it.student_handle}
-              </div>
-            </div>
-            <button class="btn btn-primary review-grade-btn" data-cid="${it.class_id}" data-cwid="${it.coursework_id}" data-sid="${it.student_id}">
-              Проверить и оценить
-            </button>
-          </div>
-        `
-          )
-          .join("")}
-      </div>
-    `;
-
-    document.querySelectorAll(".review-grade-btn").forEach((btn) => {
-      btn.onclick = () => {
-        this.showGradingModal(btn.dataset.cid, btn.dataset.cwid, btn.dataset.sid);
-      };
-    });
+    await new GlobalCalendarAdmin.ToReviewView({ container: main }).render();
   }
 
   async renderToDoView() {
     const main = document.getElementById("appMain");
-    const res = await fetch("/api/classroom/global/to-do");
-    const data = res.ok ? await res.json() : { assigned: [], missing: [], done: [] };
-
-    main.innerHTML = `
-      <h2>Список дел</h2>
-      <div class="nav-rail" style="margin: 1rem 0; border-radius: 12px; background: var(--md-sys-color-surface-container-low);">
-        <button class="nav-tab-btn active" id="tabAssigned">Назначено (${data.assigned.length})</button>
-        <button class="nav-tab-btn" id="tabMissing">Пропущено (${data.missing.length})</button>
-        <button class="nav-tab-btn" id="tabDone">Выполнено (${data.done.length})</button>
-      </div>
-      <div id="todoItemsContainer"></div>
-    `;
-
-    const container = document.getElementById("todoItemsContainer");
-    const renderList = (items) => {
-      if (items.length === 0) {
-        container.innerHTML = `<p style="padding: 2rem; text-align: center; color: var(--md-sys-color-on-surface-variant);">Пусто</p>`;
-        return;
-      }
-      container.innerHTML = items
-        .map(
-          (it) => `
-        <div style="background: var(--md-sys-color-surface-container-lowest); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 16px; padding: 1.25rem; margin-bottom: 0.75rem;">
-          <div style="font-weight: 700;">${it.coursework_title}</div>
-          <div style="font-size: 0.85rem; color: var(--md-sys-color-on-surface-variant);">
-            Класс: ${it.class_title} • ${it.due_at ? `Срок: ${new Date(it.due_at * 1000).toLocaleDateString()}` : "Без срока"}
-          </div>
-        </div>
-      `
-        )
-        .join("");
-    };
-
-    renderList(data.assigned);
-    document.getElementById("tabAssigned").onclick = (e) => {
-      document.querySelectorAll(".nav-tab-btn").forEach((b) => b.classList.remove("active"));
-      e.target.classList.add("active");
-      renderList(data.assigned);
-    };
-    document.getElementById("tabMissing").onclick = (e) => {
-      document.querySelectorAll(".nav-tab-btn").forEach((b) => b.classList.remove("active"));
-      e.target.classList.add("active");
-      renderList(data.missing);
-    };
-    document.getElementById("tabDone").onclick = (e) => {
-      document.querySelectorAll(".nav-tab-btn").forEach((b) => b.classList.remove("active"));
-      e.target.classList.add("active");
-      renderList(data.done);
-    };
+    await new GlobalCalendarAdmin.ToDoView({ container: main }).render();
   }
 
   async renderCalendarView() {
     const main = document.getElementById("appMain");
-    const res = await fetch("/api/classroom/global/calendar");
-    const items = res.ok ? await res.json() : [];
-
-    main.innerHTML = `
-      <h2>Календарь дедлайнов</h2>
-      <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem;">
-        ${
-          items.length === 0
-            ? `<div style="text-align: center; padding: 2rem;">Нет запланированных дедлайнов</div>`
-            : items
-                .map(
-                  (it) => `
-            <div style="background: var(--md-sys-color-surface-container-lowest); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 16px; padding: 1.25rem; display: flex; align-items: center; gap: 1.5rem;">
-              <div style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 800; color: var(--md-sys-color-primary);">
-                ${new Date(it.due_at * 1000).toLocaleDateString()}
-              </div>
-              <div>
-                <div style="font-weight: 700;">${it.title}</div>
-                <div style="font-size: 0.85rem; color: var(--md-sys-color-on-surface-variant);">${it.class_title}</div>
-              </div>
-            </div>
-          `
-                )
-                .join("")
-        }
-      </div>
-    `;
+    await new GlobalCalendarAdmin.CalendarView({ container: main }).render();
   }
 
-  generatePrintA4(classId) {
-    // Generate individual test variant cut-sheets for seats 1..40 and print
+  async renderAdminView() {
+    const main = document.getElementById("appMain");
+    await new GlobalCalendarAdmin.DomainAdminConsole({ container: main }).render();
+  }
+
+  async generatePrintA4(classId) {
+    let printArea = document.getElementById("printArea");
+    if (!printArea) {
+      printArea = document.createElement("div");
+      printArea.id = "printArea";
+      document.body.appendChild(printArea);
+    }
+
+    let cls = { id: classId, title: "Класс", join_pin: "00000" };
+    let members = [];
+    try {
+      const resCls = await fetch(`/api/classroom/classes/${classId}`);
+      if (resCls.ok) cls = await resCls.json();
+      const resM = await fetch(`/api/classroom/classes/${classId}/members`);
+      if (resM.ok) members = await resM.json();
+    } catch (e) {
+      console.warn("Failed fetching print data", e);
+    }
+
+    const memberBySeat = {};
+    for (const m of members) {
+      if (m.seat_number) memberBySeat[m.seat_number] = m;
+    }
+
+    const desksHtml = Array.from({ length: 30 }, (_, idx) => {
+      const seatNum = idx + 1;
+      const variant = seatNum % 2 === 1 ? 1 : 2;
+      const member = memberBySeat[seatNum];
+      const handle = member ? escapeHtml(member.handle) : "Свободная парта";
+
+      return `
+        <div class="print-desk-card" style="box-sizing: border-box; border: 1.5px dashed #444; border-radius: 6px; padding: 12px; margin-bottom: 12px; font-family: sans-serif; background: #fff;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 6px; margin-bottom: 8px;">
+            <span style="font-size: 1.15rem; font-weight: 800; color: #000;">ПАРТА №${seatNum}</span>
+            <span style="font-size: 0.95rem; font-weight: 700; background: #eee; padding: 2px 8px; border-radius: 4px;">Вариант ${variant}</span>
+          </div>
+          <div style="font-size: 0.9rem; margin-bottom: 4px;"><strong>Курс:</strong> ${escapeHtml(cls.title)} (PIN: <strong>${escapeHtml(cls.join_pin)}</strong>)</div>
+          <div style="font-size: 0.9rem; margin-bottom: 8px;"><strong>Позывной:</strong> ${handle}</div>
+          <div style="border-top: 1px solid #ddd; padding-top: 6px;">
+            <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; color: #555;">Бланк экспресс-ответов:</div>
+            <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.8rem;">
+              <tr>
+                ${[1, 2, 3, 4, 5].map(q => `<td style="border: 1px solid #999; padding: 4px; width: 20%;">№${q}: ____</td>`).join("")}
+              </tr>
+              <tr>
+                ${[6, 7, 8, 9, 10].map(q => `<td style="border: 1px solid #999; padding: 4px; width: 20%;">№${q}: ____</td>`).join("")}
+              </tr>
+            </table>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    const teacherKeyRows = Array.from({ length: 30 }, (_, idx) => {
+      const seatNum = idx + 1;
+      const variant = seatNum % 2 === 1 ? 1 : 2;
+      const member = memberBySeat[seatNum];
+      const handle = member ? escapeHtml(member.handle) : "—";
+      return `
+        <tr>
+          <td style="border: 1px solid #999; padding: 4px 8px; font-weight: 700; text-align: center;">№${seatNum}</td>
+          <td style="border: 1px solid #999; padding: 4px 8px;">${handle}</td>
+          <td style="border: 1px solid #999; padding: 4px 8px; text-align: center; font-weight: 600;">Вар. ${variant}</td>
+          <td style="border: 1px solid #999; padding: 4px 8px; width: 120px;"></td>
+        </tr>
+      `;
+    }).join("");
+
+    printArea.innerHTML = `
+      <!-- Student Desk Cards (Pages 1..N) -->
+      <div class="print-page">
+        <div style="text-align: center; margin-bottom: 12px; border-bottom: 2px solid #000; padding-bottom: 6px;">
+          <h2 style="margin: 0; font-size: 1.3rem;">BormoClass • Раздаточные карточки парт</h2>
+          <div style="font-size: 0.85rem;">Курс: ${escapeHtml(cls.title)} • Код класса: ${escapeHtml(cls.join_pin)} • 30 парт</div>
+        </div>
+        <div class="print-card-grid">
+          ${desksHtml}
+        </div>
+      </div>
+
+      <!-- Teacher Key Sheet (Separate A4 Page) -->
+      <div class="print-page" style="page-break-before: always; margin-top: 2rem;">
+        <div style="text-align: center; margin-bottom: 16px; border-bottom: 2px solid #000; padding-bottom: 8px;">
+          <h2 style="margin: 0; font-size: 1.3rem;">BormoClass • Лист-ключ преподавателя</h2>
+          <div style="font-size: 0.85rem;">Курс: ${escapeHtml(cls.title)} • PIN: ${escapeHtml(cls.join_pin)} • Контрольная ведомость вариантов</div>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-family: sans-serif; font-size: 0.85rem;">
+          <thead>
+            <tr style="background: #f0f0f0;">
+              <th style="border: 1px solid #999; padding: 6px;">Парта</th>
+              <th style="border: 1px solid #999; padding: 6px;">Позывной ученика</th>
+              <th style="border: 1px solid #999; padding: 6px;">Вариант</th>
+              <th style="border: 1px solid #999; padding: 6px;">Балл / Отметка</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${teacherKeyRows}
+          </tbody>
+        </table>
+      </div>
+    `;
+
     window.print();
   }
 }
