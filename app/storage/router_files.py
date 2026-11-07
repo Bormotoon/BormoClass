@@ -23,6 +23,7 @@ from app.storage.engine import (
     check_file_access,
     generate_svg_thumbnail
 )
+from app.passport.pii_guard import assert_e2ee_blob, assert_e2ee_text
 
 router = APIRouter(prefix="/api/storage", tags=["storage"])
 
@@ -102,6 +103,7 @@ def upload_file(
         user = ctx.user
 
         data = file.file.read()
+        assert_e2ee_blob(data)
         if len(data) > settings.MAX_UPLOAD_BYTES:
             api_error(400, "INVALID_ARGUMENT", f"Файл превышает лимит {settings.MAX_UPLOAD_BYTES} байт")
 
@@ -359,6 +361,9 @@ def get_file_annotations(file_id: str, request: Request, page_num: Optional[int]
 
 @router.post("/files/{file_id}/annotations")
 def create_file_annotation(file_id: str, req: AnnotationCreateRequest, request: Request):
+    assert_e2ee_text(req.body_text, allow_empty=True)
+    assert_e2ee_text(req.rect_json, allow_empty=True)
+    assert_e2ee_text(req.stroke_json, allow_empty=True)
     with db_session() as conn:
         ctx = resolve_auth_context(request, conn)
         user = ctx.user

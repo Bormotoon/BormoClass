@@ -10,6 +10,7 @@ from app.db import db_session
 from app.passport.middleware import require_user, require_teacher
 from app.passport.recess import award_recess_seconds
 from app.classroom.sse_hub import sse_hub
+from app.passport.pii_guard import assert_e2ee_text
 
 router = APIRouter(prefix="/api/classroom", tags=["submissions"])
 
@@ -27,7 +28,7 @@ class GradeSubmissionRequest(BaseModel):
     teacher_comment: Optional[str] = Field(default="")
 
 class CommentBankRequest(BaseModel):
-    comment_text: str = Field(min_length=1, max_length=500)
+    comment_text: str = Field(min_length=1, max_length=5000)
 
 class GradeRubricRequest(BaseModel):
     criteria_scores: Dict[str, Any] = Field(default_factory=dict)
@@ -96,6 +97,7 @@ def list_submissions(coursework_id: int, request: Request):
 @router.post("/coursework/{coursework_id}/turn-in")
 def turn_in_submission(coursework_id: int, req: TurnInRequest, request: Request):
     user = require_user(request)
+    assert_e2ee_text(req.payload_json, "Ответ ученика", allow_empty=True)
     student_id = user["user_id"]
     now = int(time.time())
 
@@ -156,6 +158,7 @@ def turn_in_submission(coursework_id: int, req: TurnInRequest, request: Request)
 @router.post("/submissions/{coursework_id}/{student_id}/grade")
 def grade_submission(coursework_id: int, student_id: int, req: GradeSubmissionRequest, request: Request):
     user = require_teacher(request)
+    assert_e2ee_text(req.teacher_comment, "Комментарий учителя", allow_empty=True)
     now = int(time.time())
 
     with db_session() as conn:
@@ -240,6 +243,7 @@ def list_comments(request: Request):
 @router.post("/comments")
 def add_comment(req: CommentBankRequest, request: Request):
     user = require_teacher(request)
+    assert_e2ee_text(req.comment_text, "Комментарий")
     with db_session() as conn:
         cursor = conn.execute("""
             INSERT INTO comment_bank (teacher_id, comment_text)
@@ -378,6 +382,7 @@ def get_class_matrix(class_id: int, request: Request):
 @router.post("/coursework/{cw_id}/submissions/{student_id}/grade-rubric")
 def grade_rubric(cw_id: int, student_id: int, req: GradeRubricRequest, request: Request):
     user = require_teacher(request)
+    assert_e2ee_text(req.teacher_comment, "Комментарий учителя", allow_empty=True)
     now = int(time.time())
 
     with db_session() as conn:
