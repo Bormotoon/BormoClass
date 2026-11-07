@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from app.db import db_session
 from app.passport.middleware import require_user, require_teacher
+from app.passport.pii_guard import is_e2ee_envelope
 from app.classroom.sse_hub import sse_hub
 router = APIRouter(tags=["global"])
 
@@ -360,8 +361,18 @@ def export_calendar_ics(calendar_token: str):
             due_at = r["due_at"]
             due_formatted = _format_ics_timestamp(due_at)
             due_end_formatted = _format_ics_timestamp(due_at + 3600)
-            summary = f"{r['title']} [{r['class_title']}]"
-            desc = (r["instructions"] or "").replace("\n", "\\n").replace("\r", "")
+            
+            raw_title = r["title"] or ""
+            if is_e2ee_envelope(raw_title):
+                summary = f"Задание #{r['id']} [{r['class_title']}]"
+            else:
+                summary = f"{raw_title} [{r['class_title']}]"
+
+            raw_instructions = r["instructions"] or ""
+            if is_e2ee_envelope(raw_instructions):
+                desc = "Откройте BormoClass для просмотра зашифрованной инструкции"
+            else:
+                desc = raw_instructions.replace("\n", "\\n").replace("\r", "")
 
             lines.extend([
                 "BEGIN:VEVENT",

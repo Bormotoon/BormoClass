@@ -625,9 +625,10 @@ def run_originality_check(cw_id: int, req: OriginalityCheckRequest, request: Req
             if runs >= 3:
                 raise HTTPException(status_code=400, detail="Лимит проверок (3) исчерпан")
 
-        # Получаем текст для проверки
+        # Получаем отпечатки (Zero-Knowledge) или текст для проверки
+        my_fps = set(req.fingerprints or [])
         text_to_check = req.content_text or ""
-        if not text_to_check:
+        if not text_to_check and not my_fps:
             sub = conn.execute(
                 "SELECT * FROM submissions WHERE coursework_id = ? AND student_id = ?",
                 (cw_id, student_id)
@@ -635,7 +636,10 @@ def run_originality_check(cw_id: int, req: OriginalityCheckRequest, request: Req
             if sub:
                 text_to_check = dict(sub).get("payload_json") or ""
 
-        if not text_to_check or len(text_to_check.strip()) < 10:
+        if not my_fps and text_to_check and not is_e2ee_envelope(text_to_check):
+            my_fps = _get_winnowing_fingerprints(text_to_check)
+
+        if not my_fps and (not text_to_check or len(text_to_check.strip()) < 10):
             return {"ok": True, "match_percent": 0.0, "matches": []}
 
         # База сравнения: другие сдачи курса и инструкции задания
@@ -648,30 +652,61 @@ def run_originality_check(cw_id: int, req: OriginalityCheckRequest, request: Req
         max_match = 0.0
         matches = []
 
-        is_code = "def " in text_to_check or "class " in text_to_check or "import " in text_to_check
+        is_code = bool(text_to_check and ("def " in text_to_check or "class " in text_to_check or "import " in text_to_check))
 
         for os in other_subs:
+            other_sid = os["student_id"]
             other_text = dict(os).get("payload_json") or ""
-            if not other_text:
-                continue
+            
+            # Попытка получить fingerprints из предыдущего отчёта другого ученика
+            other_fps = set()
+            prev_rep = conn.execute("""
+                SELECT matches_json FROM originality_reports
+                WHERE coursework_id = ? AND student_id = ?
+                ORDER BY created_at DESC LIMIT 1
+            """, (cw_id, other_sid)).fetchone()
+            if prev_rep:
+                try:
+                    rep_data = json.loads(prev_rep["matches_json"])
+                    if isinstance(rep_data, dict) and "fingerprints" in rep_data:
+                        other_fps = set(rep_data["fingerprints"])
+                except Exception:
+                    pass
+
+            if not other_fps and other_text and not is_e2ee_envelope(other_text):
+                other_fps = _get_winnowing_fingerprints(other_text)
 
             match_pct = 0.0
-            if is_code:
-                match_pct = _compare_codes(text_to_check, other_text)
-            else:
-                match_pct = _compare_texts(text_to_check, other_text)
+            if my_fps and other_fps:
+                inter = len(my_fps.intersection(other_fps))
+                min_len = min(len(my_fps), len(other_fps))
+                match_pct = (inter / min_len * 100.0) if min_len > 0 else 0.0
+            elif other_text and not is_e2ee_envelope(other_text) and text_to_check and not is_e2ee_envelope(text_to_check):
+                if is_code:
+                    match_pct = _compare_codes(text_to_check, other_text)
+                else:
+                    match_pct = _compare_texts(text_to_check, other_text)
 
             if match_pct > 15.0:
                 matches.append({
-                    "source": f"student_{os['student_id']}",
+                    "source": f"student_{other_sid}",
                     "match_percent": round(match_pct, 1),
                 })
                 if match_pct > max_match:
                     max_match = match_pct
 
         # Проверка против инструкции задания
-        if cw["instructions"]:
-            inst_pct = _compare_texts(text_to_check, cw["instructions"])
+        inst_text = cw["instructions"] or ""
+        if inst_text and not is_e2ee_envelope(inst_text):
+            inst_pct = 0.0
+            inst_fps = _get_winnowing_fingerprints(inst_text)
+            if my_fps and inst_fps:
+                inter = len(my_fps.intersection(inst_fps))
+                min_len = min(len(my_fps), len(inst_fps))
+                inst_pct = (inter / min_len * 100.0) if min_len > 0 else 0.0
+            elif text_to_check and not is_e2ee_envelope(text_to_check):
+                inst_pct = _compare_texts(text_to_check, inst_text)
+
             if inst_pct > 15.0:
                 matches.append({
                     "source": "instructions",
@@ -683,6 +718,11 @@ def run_originality_check(cw_id: int, req: OriginalityCheckRequest, request: Req
         max_match = round(min(100.0, max_match), 1)
         now = int(time.time())
 
+        report_payload = {
+            "matches": matches,
+            "fingerprints": list(my_fps)
+        }
+
         conn.execute("""
             INSERT INTO originality_reports (
                 coursework_id, student_id, run_by_role, student_runs_used,
@@ -690,7 +730,7 @@ def run_originality_check(cw_id: int, req: OriginalityCheckRequest, request: Req
             ) VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             cw_id, student_id, role_str, 1,
-            max_match, json.dumps(matches, ensure_ascii=False), now
+            max_match, json.dumps(report_payload, ensure_ascii=False), now
         ))
 
         return {
@@ -718,7 +758,11 @@ def get_originality_report(cw_id: int, student_id: int, request: Request):
 
         r_dict = dict(row)
         try:
-            r_dict["matches"] = json.loads(r_dict["matches_json"])
+            loaded = json.loads(r_dict["matches_json"])
+            if isinstance(loaded, dict) and "matches" in loaded:
+                r_dict["matches"] = loaded["matches"]
+            else:
+                r_dict["matches"] = loaded
         except Exception:
             r_dict["matches"] = []
         return r_dict
