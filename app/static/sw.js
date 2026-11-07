@@ -7,20 +7,30 @@
  *  - Network-first for dynamic API endpoints
  */
 
-const CACHE_NAME = "bormoclass-shell-v1";
-const MATERIALS_CACHE = "bormoclass-materials-v1";
+const CACHE_NAME = "bormoclass-shell-v2";
+const MATERIALS_CACHE = "bormoclass-materials-v2";
 
 const PRECACHE_ASSETS = [
   "/",
+  "/static/index.html",
+  "/static/manifest.webmanifest",
   "/static/css/md3-tokens.css",
   "/static/css/app.css",
+  "/static/css/classroom-ext.css",
   "/static/js/icons.js",
-  "/static/js/sanpin-timer.js",
+  "/static/js/e2ee-crypto.js",
+  "/static/js/pb-passport.js",
   "/static/js/pb-passport-bridge.js",
+  "/static/js/bormoclass-app.js",
+  "/static/js/sanpin-timer.js",
+  "/static/js/modules/api-v1.js",
+  "/static/js/modules/home-and-drawer.js",
+  "/static/js/modules/stream-and-comments.js",
+  "/static/js/modules/classwork-and-quizzes.js",
+  "/static/js/modules/people-groups-guardians.js",
   "/static/js/modules/speedgrader.js",
   "/static/js/modules/gradebook-periods.js",
-  "/static/js/modules/global-calendar-admin.js",
-  "/static/manifest.webmanifest"
+  "/static/js/modules/global-calendar-admin.js"
 ];
 
 // Install: pre-cache application shell

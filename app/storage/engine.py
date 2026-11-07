@@ -187,7 +187,7 @@ def ensure_student_copy(conn: sqlite3.Connection, coursework_row: Any, student_i
     cw_id = cw_dict["id"]
     class_id = cw_dict["class_id"]
 
-    raw_materials = cw_dict.get("materials_json") or "[]"
+    raw_materials = cw_dict.get("materials_json") or cw_dict.get("attachments_json") or "[]"
     try:
         materials = json.loads(raw_materials) if isinstance(raw_materials, str) else raw_materials
     except Exception:
@@ -301,6 +301,7 @@ def ensure_student_copy(conn: sqlite3.Connection, coursework_row: Any, student_i
 
         # Прикрепляем в submission_attachments
         attachment_payload = {
+            "file_id": new_file_id,
             "localFile": {
                 "id": new_file_id,
                 "title": new_file_title,

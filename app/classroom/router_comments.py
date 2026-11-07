@@ -212,7 +212,7 @@ def delete_class_comment(
         now = int(time.time())
         conn.execute("UPDATE class_comments SET is_deleted = 1, updated_at = ? WHERE id = ?", (now, id))
         sse_hub.notify_class(class_id, "comment_deleted", {"id": id})
-        return {"ok": True, "id": id, "is_deleted": True}
+        return {"ok": True, "id": id, "is_deleted": True, "status": "deleted"}
 
 # -----------------------------------------------------------------------------
 # Приватные комментарии (private_comments)

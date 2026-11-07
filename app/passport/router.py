@@ -44,6 +44,7 @@ class RegisterRequest(BaseModel):
     role: str = Field(default="student", pattern="^(student|teacher)$")
     password: str = Field(min_length=4, max_length=128)
     handle: Optional[str] = None
+    candidate_handle: Optional[str] = None
     ticket: Optional[str] = None
     e2ee_public_key: Optional[str] = None
     e2ee_key_bundle_json: Optional[str] = None
@@ -283,8 +284,9 @@ def register(req: RegisterRequest, response: Response):
     now = int(time.time())
     with db_session() as conn:
         handle = None
-        if req.handle:
-            candidate = canon_handle(req.handle)
+        requested_handle = req.handle or req.candidate_handle
+        if requested_handle:
+            candidate = canon_handle(requested_handle)
             if not is_valid_dictionary_handle(candidate):
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

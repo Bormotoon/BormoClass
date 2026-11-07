@@ -266,7 +266,16 @@ def delete_comment(comment_id: int, request: Request):
 # Аналитика (Усп, КЗ, СОУ по Симонову) и Матрица оценок
 # -----------------------------------------------------------------------------
 
-def calculate_sou_metrics(grades: List[int]) -> Dict[str, Any]:
+def calculate_sou_metrics(grades: List[Any]) -> Dict[str, Any]:
+    norm_grades = []
+    for g in grades:
+        if isinstance(g, dict):
+            val = g.get("grade_five")
+            if val is not None:
+                norm_grades.append(int(val))
+        elif isinstance(g, (int, float)):
+            norm_grades.append(int(g))
+    grades = norm_grades
     n_total = len(grades)
     if n_total == 0:
         return {
