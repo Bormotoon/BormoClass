@@ -17,6 +17,13 @@ from app.classroom.router_coursework import router as coursework_router
 from app.classroom.router_submissions import router as submissions_router
 from app.classroom.router_global import router as global_router
 from app.classroom.router_board import router as board_router
+from app.classroom.router_comments import router as comments_router
+from app.classroom.router_quizzes_and_sets import router as quizzes_router
+from app.classroom.router_notifications_admin import router as notif_admin_router
+from app.storage import storage_router
+from app.worker.scheduler import run_background_scheduler
+from app.v1 import v1_router
+from app.v1.protocol import GoogleAPIException
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -94,7 +101,16 @@ async def lifespan(app: FastAPI):
     init_db()
     # Привязка текущего event loop к SSE-хабу
     sse_hub.set_loop(asyncio.get_running_loop())
-    yield
+    # Запуск фонового планировщика
+    scheduler_task = asyncio.create_task(run_background_scheduler())
+    try:
+        yield
+    finally:
+        scheduler_task.cancel()
+        try:
+            await scheduler_task
+        except asyncio.CancelledError:
+            pass
 
 app = FastAPI(
     title="BormoClass",
@@ -113,6 +129,13 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         content={"detail": detail_msg, "errors": [e.get("msg", "") for e in errors]}
     )
 
+@app.exception_handler(GoogleAPIException)
+async def google_api_exception_handler(request: Request, exc: GoogleAPIException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.error_message, "error": exc.error_payload}
+    )
+
 # Подключение мидлвари Pedobraz-Passport
 app.add_middleware(PassportMiddleware)
 
@@ -123,6 +146,11 @@ app.include_router(coursework_router)
 app.include_router(submissions_router)
 app.include_router(global_router)
 app.include_router(board_router)
+app.include_router(comments_router)
+app.include_router(quizzes_router)
+app.include_router(notif_admin_router)
+app.include_router(storage_router)
+app.include_router(v1_router)
 
 # Раздача статики
 STATIC_DIR.mkdir(parents=True, exist_ok=True)

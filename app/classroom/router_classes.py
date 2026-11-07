@@ -1,7 +1,8 @@
 import secrets
 import time
+import uuid
 from typing import Optional, List
-from fastapi import APIRouter, Request, HTTPException, status
+from fastapi import APIRouter, Request, HTTPException, status, Query
 from pydantic import BaseModel, Field
 
 from app.db import db_session
@@ -406,3 +407,459 @@ def lock_recess(class_id: int, req: LockRecessRequest, request: Request):
         sse_hub.notify_class(class_id, "recess_lock_changed", {"recess_locked_until": recess_locked_until})
 
         return {"ok": True, "recess_locked_until": recess_locked_until}
+
+# ============================================================================
+# РАСШИРЕННЫЕ МЕТОДЫ УПРАВЛЕНИЯ КУРСОМ (ПАКЕТ 3 И 4)
+# ============================================================================
+
+class EnrollmentCodeActionRequest(BaseModel):
+    action: str = Field(pattern="^(regenerate|disable|enable)$")
+
+class ClassSettingsUpdateRequest(BaseModel):
+    theme_color: Optional[str] = None
+    banner_preset: Optional[str] = None
+    video_room_url: Optional[str] = None
+    video_visible_to_students: Optional[int] = None
+    stream_post_mode: Optional[str] = None
+    stream_work_mode: Optional[str] = None
+    show_deleted_items: Optional[int] = None
+    guardians_enabled: Optional[int] = None
+
+class CopyClassRequest(BaseModel):
+    title: Optional[str] = None
+
+class MuteStudentRequest(BaseModel):
+    is_muted: int = Field(ge=0, le=1)
+
+class BulkStudentActionRequest(BaseModel):
+    student_ids: List[int]
+    action: str = Field(pattern="^(unenroll|mute|unmute)$")
+
+class MaterialSetCreateRequest(BaseModel):
+    set_title: str = Field(min_length=1, max_length=200)
+    materials_json: Optional[str] = "[]"
+    sort_order: Optional[int] = 0
+
+class MaterialSetUpdateRequest(BaseModel):
+    set_title: Optional[str] = None
+    materials_json: Optional[str] = None
+    sort_order: Optional[int] = None
+
+@router.post("/{class_id}/enrollment-code")
+def manage_enrollment_code(class_id: int, req: EnrollmentCodeActionRequest, request: Request):
+    user = require_teacher(request)
+    with db_session() as conn:
+        class_row = conn.execute("SELECT teacher_id, join_pin, enrollment_enabled FROM classes WHERE id = ?", (class_id,)).fetchone()
+        if not class_row or (class_row["teacher_id"] != user["user_id"] and user["role"] != "admin"):
+            raise HTTPException(status_code=403, detail="Нет прав на управление кодом записи")
+
+        if req.action == "regenerate":
+            new_pin = _generate_unique_pin(conn)
+            conn.execute("UPDATE classes SET join_pin = ?, enrollment_enabled = 1 WHERE id = ?", (new_pin, class_id))
+            return {"ok": True, "action": "regenerate", "enrollment_code": new_pin, "enrollment_enabled": 1}
+        elif req.action == "disable":
+            conn.execute("UPDATE classes SET enrollment_enabled = 0 WHERE id = ?", (class_id,))
+            return {"ok": True, "action": "disable", "enrollment_code": class_row["join_pin"], "enrollment_enabled": 0}
+        elif req.action == "enable":
+            conn.execute("UPDATE classes SET enrollment_enabled = 1 WHERE id = ?", (class_id,))
+            return {"ok": True, "action": "enable", "enrollment_code": class_row["join_pin"], "enrollment_enabled": 1}
+
+@router.patch("/{class_id}/settings")
+def update_class_settings(class_id: int, req: ClassSettingsUpdateRequest, request: Request):
+    user = require_teacher(request)
+    with db_session() as conn:
+        class_row = conn.execute("SELECT teacher_id FROM classes WHERE id = ?", (class_id,)).fetchone()
+        if not class_row or (class_row["teacher_id"] != user["user_id"] and user["role"] != "admin"):
+            raise HTTPException(status_code=403, detail="Нет прав на изменение настроек курса")
+
+        updates = []
+        params = []
+        if req.theme_color is not None:
+            updates.append("theme_color = ?")
+            params.append(req.theme_color)
+        if req.banner_preset is not None:
+            updates.append("banner_preset = ?")
+            params.append(req.banner_preset)
+        if req.video_room_url is not None:
+            updates.append("video_room_url = ?")
+            params.append(req.video_room_url)
+        if req.video_visible_to_students is not None:
+            updates.append("video_visible_to_students = ?")
+            params.append(req.video_visible_to_students)
+        if req.stream_post_mode is not None:
+            updates.append("stream_post_mode = ?")
+            params.append(req.stream_post_mode)
+        if req.stream_work_mode is not None:
+            updates.append("stream_work_mode = ?")
+            params.append(req.stream_work_mode)
+        if req.show_deleted_items is not None:
+            updates.append("show_deleted_items = ?")
+            params.append(req.show_deleted_items)
+        if req.guardians_enabled is not None:
+            updates.append("guardians_enabled = ?")
+            params.append(req.guardians_enabled)
+
+        now = int(time.time())
+        updates.append("updated_at = ?")
+        params.append(now)
+
+        params.append(class_id)
+        conn.execute(f"UPDATE classes SET {', '.join(updates)} WHERE id = ?", params)
+        updated = conn.execute("SELECT * FROM classes WHERE id = ?", (class_id,)).fetchone()
+        return dict(updated)
+
+@router.post("/{class_id}/copy")
+def copy_class(class_id: int, request: Request, req: Optional[CopyClassRequest] = None):
+    user = require_teacher(request)
+    uid = user.get("user_id") or user.get("id")
+    now = int(time.time())
+    if req is None:
+        req = CopyClassRequest()
+    with db_session() as conn:
+        orig = conn.execute("SELECT * FROM classes WHERE id = ?", (class_id,)).fetchone()
+        if not orig:
+            raise HTTPException(status_code=404, detail="Исходный класс не найден")
+        if orig["teacher_id"] != uid and user.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Нет прав на копирование курса")
+
+        orig_dict = dict(orig)
+        new_title = (req.title or f"Копия — {orig_dict['title']}").strip()
+        new_pin = _generate_unique_pin(conn)
+        new_cal = f"cal_{uuid.uuid4().hex[:12]}"
+        new_folder_id = f"folder_{uuid.uuid4().hex[:16]}"
+
+        conn.execute(
+            """INSERT INTO stored_folders (id, class_id, owner_user_id, folder_title, folder_kind, created_at)
+               VALUES (?, NULL, ?, ?, 'COURSE_TEACHER_ROOT', ?)""",
+            (new_folder_id, uid, f"{new_title} - Teacher Folder", now)
+        )
+
+        cursor = conn.execute(
+            """INSERT INTO classes (
+                teacher_id, title, subject_code, grade_level, join_pin,
+                quarter_goal, recess_locked_until, classroom_state_json,
+                section, description_heading, description, room, levels,
+                course_state, enrollment_enabled, guardians_enabled, calendar_token,
+                teacher_folder_id, theme_color, banner_preset, video_room_url,
+                video_visible_to_students, stream_post_mode, stream_work_mode,
+                show_deleted_items, grade_calc_type, grade_display_setting,
+                updated_at, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, 0, '{}', ?, ?, ?, ?, ?, 'ACTIVE', 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                uid, new_title, orig_dict["subject_code"], orig_dict["grade_level"], new_pin,
+                orig_dict["quarter_goal"], orig_dict["section"], orig_dict["description_heading"],
+                orig_dict["description"], orig_dict["room"], orig_dict["levels"],
+                orig_dict["guardians_enabled"], new_cal, new_folder_id, orig_dict["theme_color"],
+                orig_dict["banner_preset"], orig_dict["video_room_url"], orig_dict["video_visible_to_students"],
+                orig_dict["stream_post_mode"], orig_dict["stream_work_mode"], orig_dict["show_deleted_items"],
+                orig_dict["grade_calc_type"], orig_dict["grade_display_setting"], now, now
+            )
+        )
+        new_class_id = cursor.lastrowid
+        conn.execute("UPDATE stored_folders SET class_id = ? WHERE id = ?", (new_class_id, new_folder_id))
+        conn.execute("INSERT INTO course_teachers (class_id, teacher_id, is_primary, joined_at) VALUES (?, ?, 1, ?)", (new_class_id, uid, now))
+
+        # Клонирование тем
+        topic_map = {}
+        old_topics = conn.execute("SELECT * FROM class_topics WHERE class_id = ?", (class_id,)).fetchall()
+        for t in old_topics:
+            t_cur = conn.execute(
+                "INSERT INTO class_topics (class_id, title, frp_topic_id, sort_order, updated_at) VALUES (?, ?, ?, ?, ?)",
+                (new_class_id, t["title"], t["frp_topic_id"], t["sort_order"], now)
+            )
+            topic_map[t["id"]] = t_cur.lastrowid
+
+        # Клонирование категорий оценок
+        cat_map = {}
+        old_cats = conn.execute("SELECT * FROM grade_categories WHERE class_id = ?", (class_id,)).fetchall()
+        for c in old_cats:
+            c_cur = conn.execute(
+                "INSERT INTO grade_categories (class_id, category_title, default_denominator, weight_micros) VALUES (?, ?, ?, ?)",
+                (new_class_id, c["category_title"], c["default_denominator"], c["weight_micros"])
+            )
+            cat_map[c["id"]] = c_cur.lastrowid
+
+        # Клонирование постоянных наборов материалов
+        old_sets = conn.execute("SELECT * FROM course_material_sets WHERE class_id = ?", (class_id,)).fetchall()
+        for s in old_sets:
+            conn.execute(
+                "INSERT INTO course_material_sets (class_id, set_title, materials_json, sort_order) VALUES (?, ?, ?, ?)",
+                (new_class_id, s["set_title"], s["materials_json"], s["sort_order"])
+            )
+
+        # Клонирование заданий строго в статусе draft со сбросом сроков
+        old_cw = conn.execute("SELECT * FROM coursework WHERE class_id = ?", (class_id,)).fetchall()
+        for cw in old_cw:
+            new_top_id = topic_map.get(cw["topic_id"])
+            new_cat_id = cat_map.get(cw["grade_category_id"])
+            cw_cur = conn.execute(
+                """INSERT INTO coursework (
+                    class_id, topic_id, kind, title, instructions, attachments_json,
+                    rubric_json, target_students, max_points, recess_reward, is_homework,
+                    state, scheduled_at, due_at, creator_user_id, creator_client_id,
+                    work_type, assignee_mode, modification_mode, grade_category_id,
+                    grading_period_id, choices_json, peer_replies_enabled, show_class_summary,
+                    close_after_due, originality_enabled, reviewed_by_teacher, sort_order,
+                    updated_at, created_at
+                ) VALUES (
+                    ?, ?, ?, ?, ?, ?,
+                    ?, 'all', ?, ?, ?,
+                    'draft', NULL, NULL, ?, ?,
+                    ?, 'ALL_STUDENTS', ?, ?,
+                    NULL, ?, ?, ?,
+                    ?, ?, 0, ?,
+                    ?, ?
+                )""",
+                (
+                    new_class_id, new_top_id, cw["kind"], cw["title"], cw["instructions"], cw["attachments_json"],
+                    cw["rubric_json"], cw["max_points"], cw["recess_reward"], cw["is_homework"],
+                    user["user_id"], cw["creator_client_id"],
+                    cw["work_type"], cw["modification_mode"], new_cat_id,
+                    cw["choices_json"], cw["peer_replies_enabled"], cw["show_class_summary"],
+                    cw["close_after_due"], cw["originality_enabled"], cw["sort_order"],
+                    now, now
+                )
+            )
+            new_cw_id = cw_cur.lastrowid
+
+            old_rubric = conn.execute("SELECT * FROM rubrics WHERE coursework_id = ?", (cw["id"],)).fetchone()
+            if old_rubric:
+                conn.execute(
+                    """INSERT INTO rubrics (class_id, coursework_id, creator_client_id, source_sheet_id, is_scored, criteria_json, created_at, updated_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (new_class_id, new_cw_id, old_rubric["creator_client_id"], old_rubric["source_sheet_id"], old_rubric["is_scored"], old_rubric["criteria_json"], now, now)
+                )
+
+            old_quiz = conn.execute("SELECT * FROM quizzes WHERE coursework_id = ?", (cw["id"],)).fetchone()
+            if old_quiz:
+                conn.execute(
+                    """INSERT INTO quizzes (class_id, coursework_id, quiz_title, description, questions_json, shuffle_questions, time_limit_sec, lock_tab_focus, auto_import_grades, show_correct_answers, created_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (new_class_id, new_cw_id, old_quiz["quiz_title"], old_quiz["description"], old_quiz["questions_json"], old_quiz["shuffle_questions"], old_quiz["time_limit_sec"], old_quiz["lock_tab_focus"], old_quiz["auto_import_grades"], old_quiz["show_correct_answers"], now)
+                )
+
+            old_ps = conn.execute("SELECT * FROM practice_sets WHERE coursework_id = ?", (cw["id"],)).fetchone()
+            if old_ps:
+                conn.execute(
+                    """INSERT INTO practice_sets (class_id, coursework_id, set_title, cards_json, created_at)
+                       VALUES (?, ?, ?, ?, ?)""",
+                    (new_class_id, new_cw_id, old_ps["set_title"], old_ps["cards_json"], now)
+                )
+
+        old_mats = conn.execute("SELECT * FROM course_materials WHERE class_id = ?", (class_id,)).fetchall()
+        for m in old_mats:
+            new_top_id = topic_map.get(m["topic_id"])
+            conn.execute(
+                """INSERT INTO course_materials (
+                    class_id, topic_id, creator_user_id, creator_client_id, title,
+                    description, materials_json, state, assignee_mode, target_students_json,
+                    learning_goals_json, sort_order, scheduled_at, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, 'DRAFT', 'ALL_STUDENTS', '[]', ?, ?, NULL, ?, ?)""",
+                (
+                    new_class_id, new_top_id, user["user_id"], m["creator_client_id"], m["title"],
+                    m["description"], m["materials_json"], m["learning_goals_json"], m["sort_order"], now, now
+                )
+            )
+
+        new_row = conn.execute("SELECT * FROM classes WHERE id = ?", (new_class_id,)).fetchone()
+        return dict(new_row)
+
+@router.post("/{class_id}/students/{student_id}/mute")
+def mute_student(class_id: int, student_id: int, req: MuteStudentRequest, request: Request):
+    user = require_teacher(request)
+    with db_session() as conn:
+        class_row = conn.execute("SELECT teacher_id FROM classes WHERE id = ?", (class_id,)).fetchone()
+        if not class_row or (class_row["teacher_id"] != user["user_id"] and user["role"] != "admin"):
+            raise HTTPException(status_code=403, detail="Нет прав на управление заглушением ученика")
+
+        conn.execute(
+            "UPDATE class_members SET is_muted = ? WHERE class_id = ? AND student_id = ?",
+            (req.is_muted, class_id, student_id)
+        )
+        return {"ok": True, "student_id": student_id, "is_muted": req.is_muted}
+
+@router.post("/{class_id}/students/bulk")
+def bulk_students_action(class_id: int, req: BulkStudentActionRequest, request: Request):
+    user = require_teacher(request)
+    with db_session() as conn:
+        class_row = conn.execute("SELECT teacher_id FROM classes WHERE id = ?", (class_id,)).fetchone()
+        if not class_row or (class_row["teacher_id"] != user["user_id"] and user["role"] != "admin"):
+            raise HTTPException(status_code=403, detail="Нет прав на управление составом курса")
+
+        if not req.student_ids:
+            return {"ok": True, "affected": 0}
+
+        placeholders = ", ".join("?" for _ in req.student_ids)
+        params = list(req.student_ids)
+
+        if req.action == "unenroll":
+            conn.execute(
+                f"UPDATE class_members SET enrollment_active = 0 WHERE class_id = ? AND student_id IN ({placeholders})",
+                [class_id] + params
+            )
+            conn.execute(
+                f"DELETE FROM student_group_members WHERE class_id = ? AND student_id IN ({placeholders})",
+                [class_id] + params
+            )
+        elif req.action == "mute":
+            conn.execute(
+                f"UPDATE class_members SET is_muted = 1 WHERE class_id = ? AND student_id IN ({placeholders})",
+                [class_id] + params
+            )
+        elif req.action == "unmute":
+            conn.execute(
+                f"UPDATE class_members SET is_muted = 0 WHERE class_id = ? AND student_id IN ({placeholders})",
+                [class_id] + params
+            )
+
+        return {"ok": True, "action": req.action, "affected": len(req.student_ids)}
+
+@router.get("/{class_id}/students/{student_id}/summary")
+def get_student_summary(class_id: int, student_id: int, request: Request, filter: Optional[str] = Query(None)):
+    user = require_user(request)
+    with db_session() as conn:
+        class_row = conn.execute("SELECT teacher_id FROM classes WHERE id = ?", (class_id,)).fetchone()
+        if not class_row:
+            raise HTTPException(status_code=404, detail="Класс не найден")
+
+        is_teacher = (user["role"] in ("teacher", "admin") and (class_row["teacher_id"] == user["user_id"] or user["role"] == "admin"))
+        is_self = (user["user_id"] == student_id)
+
+        if not is_teacher and not is_self:
+            raise HTTPException(status_code=403, detail="Нет прав на просмотр сводки ученика")
+
+        m_row = conn.execute(
+            """SELECT cm.*, u.handle, u.avatar_seed FROM class_members cm
+               JOIN users u ON cm.student_id = u.id
+               WHERE cm.class_id = ? AND cm.student_id = ?""",
+            (class_id, student_id)
+        ).fetchone()
+        if not m_row:
+            raise HTTPException(status_code=404, detail="Ученик не найден в данном курсе")
+
+        now = int(time.time())
+        cw_rows = conn.execute(
+            """SELECT cw.id, cw.title, cw.kind, cw.work_type, cw.max_points, cw.due_at,
+                      s.status, s.v1_state, s.assigned_grade, s.draft_grade, s.is_late, s.updated_at
+               FROM coursework cw
+               LEFT JOIN submissions s ON cw.id = s.coursework_id AND s.student_id = ?
+               WHERE cw.class_id = ? AND cw.state IN ('published', 'PUBLISHED')
+               ORDER BY cw.created_at DESC""",
+            (student_id, class_id)
+        ).fetchall()
+
+        items = []
+        counts = {"ALL": 0, "TURNED_IN": 0, "ASSIGNED": 0, "RETURNED": 0, "MISSING": 0}
+
+        for r in cw_rows:
+            counts["ALL"] += 1
+            v1_state = r["v1_state"] or "NEW"
+            due = r["due_at"]
+            is_missing = bool(due and due < now and v1_state not in ("TURNED_IN", "RETURNED"))
+
+            item_status = "ASSIGNED"
+            if v1_state == "RETURNED":
+                item_status = "RETURNED"
+                counts["RETURNED"] += 1
+            elif v1_state == "TURNED_IN":
+                item_status = "TURNED_IN"
+                counts["TURNED_IN"] += 1
+            elif is_missing:
+                item_status = "MISSING"
+                counts["MISSING"] += 1
+            else:
+                counts["ASSIGNED"] += 1
+
+            if filter and filter.upper() != "ALL" and filter.upper() != item_status:
+                continue
+
+            items.append({
+                "coursework_id": r["id"],
+                "title": r["title"],
+                "kind": r["kind"],
+                "work_type": r["work_type"],
+                "max_points": r["max_points"],
+                "due_at": r["due_at"],
+                "v1_state": v1_state,
+                "assigned_grade": r["assigned_grade"],
+                "draft_grade": r["draft_grade"] if is_teacher else None,
+                "is_late": bool(r["is_late"]),
+                "summary_status": item_status,
+                "updated_at": r["updated_at"]
+            })
+
+        return {
+            "student_id": student_id,
+            "handle": m_row["handle"],
+            "avatar_seed": m_row["avatar_seed"],
+            "seat_number": m_row["seat_number"],
+            "is_muted": m_row["is_muted"],
+            "counts": counts,
+            "items": items
+        }
+
+@router.get("/{class_id}/material-sets")
+def list_material_sets(class_id: int, request: Request):
+    user = require_user(request)
+    with db_session() as conn:
+        rows = conn.execute(
+            "SELECT * FROM course_material_sets WHERE class_id = ? ORDER BY sort_order ASC, id ASC",
+            (class_id,)
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+@router.post("/{class_id}/material-sets")
+def create_material_set(class_id: int, req: MaterialSetCreateRequest, request: Request):
+    user = require_teacher(request)
+    with db_session() as conn:
+        c_row = conn.execute("SELECT teacher_id FROM classes WHERE id = ?", (class_id,)).fetchone()
+        if not c_row or (c_row["teacher_id"] != user["user_id"] and user["role"] != "admin"):
+            raise HTTPException(status_code=403, detail="Нет прав на добавление постоянных материалов курса")
+
+        cursor = conn.execute(
+            "INSERT INTO course_material_sets (class_id, set_title, materials_json, sort_order) VALUES (?, ?, ?, ?)",
+            (class_id, req.set_title.strip(), req.materials_json or "[]", req.sort_order or 0)
+        )
+        new_row = conn.execute("SELECT * FROM course_material_sets WHERE id = ?", (cursor.lastrowid,)).fetchone()
+        return dict(new_row)
+
+@router.patch("/{class_id}/material-sets/{set_id}")
+def update_material_set(class_id: int, set_id: int, req: MaterialSetUpdateRequest, request: Request):
+    user = require_teacher(request)
+    with db_session() as conn:
+        c_row = conn.execute("SELECT teacher_id FROM classes WHERE id = ?", (class_id,)).fetchone()
+        if not c_row or (c_row["teacher_id"] != user["user_id"] and user["role"] != "admin"):
+            raise HTTPException(status_code=403, detail="Нет прав на изменение материалов курса")
+
+        updates = []
+        params = []
+        if req.set_title is not None:
+            updates.append("set_title = ?")
+            params.append(req.set_title.strip())
+        if req.materials_json is not None:
+            updates.append("materials_json = ?")
+            params.append(req.materials_json)
+        if req.sort_order is not None:
+            updates.append("sort_order = ?")
+            params.append(req.sort_order)
+
+        if updates:
+            params.extend([set_id, class_id])
+            conn.execute(f"UPDATE course_material_sets SET {', '.join(updates)} WHERE id = ? AND class_id = ?", params)
+
+        row = conn.execute("SELECT * FROM course_material_sets WHERE id = ? AND class_id = ?", (set_id, class_id)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Набор материалов не найден")
+        return dict(row)
+
+@router.delete("/{class_id}/material-sets/{set_id}")
+def delete_material_set(class_id: int, set_id: int, request: Request):
+    user = require_teacher(request)
+    with db_session() as conn:
+        c_row = conn.execute("SELECT teacher_id FROM classes WHERE id = ?", (class_id,)).fetchone()
+        if not c_row or (c_row["teacher_id"] != user["user_id"] and user["role"] != "admin"):
+            raise HTTPException(status_code=403, detail="Нет прав на удаление материалов курса")
+
+        conn.execute("DELETE FROM course_material_sets WHERE id = ? AND class_id = ?", (set_id, class_id))
+        return {"ok": True}
+

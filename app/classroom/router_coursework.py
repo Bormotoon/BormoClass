@@ -27,13 +27,17 @@ class CourseworkCreateRequest(BaseModel):
     attachments_json: str = Field(default="[]")
     rubric_json: str = Field(default="[]")
     target_students: str = Field(default="all")
-    max_points: int = Field(default=5, ge=1, le=1000)
+    max_points: int = Field(default=5, ge=0, le=1000)
     recess_reward: int = Field(default=300, ge=0, le=3600)
     is_homework: int = Field(default=0, ge=0, le=1)
     state: str = Field(default="published", pattern="^(draft|scheduled|published)$")
     scheduled_at: Optional[int] = None
     due_at: Optional[int] = None
     extra_class_ids: Optional[List[int]] = None
+    work_type: Optional[str] = None
+    peer_replies_enabled: Optional[int] = None
+    choices_json: Optional[str] = None
+    close_after_due: Optional[int] = None
 
 class CourseworkUpdateRequest(BaseModel):
     topic_id: Optional[int] = None
@@ -42,17 +46,25 @@ class CourseworkUpdateRequest(BaseModel):
     attachments_json: Optional[str] = None
     rubric_json: Optional[str] = None
     target_students: Optional[str] = None
-    max_points: Optional[int] = Field(default=None, ge=1, le=1000)
+    max_points: Optional[int] = Field(default=None, ge=0, le=1000)
     recess_reward: Optional[int] = Field(default=None, ge=0, le=3600)
     is_homework: Optional[int] = Field(default=None, ge=0, le=1)
     state: Optional[str] = Field(default=None, pattern="^(draft|scheduled|published)$")
     scheduled_at: Optional[int] = None
     due_at: Optional[int] = None
+    work_type: Optional[str] = None
+    peer_replies_enabled: Optional[int] = None
+    choices_json: Optional[str] = None
+    close_after_due: Optional[int] = None
 
 class ReusePostRequest(BaseModel):
     target_class_id: int
     is_homework: Optional[int] = None
     due_at: Optional[int] = None
+
+class AssignGroupsRequest(BaseModel):
+    coursework_id: int
+    group_ids: List[int]
 
 # -----------------------------------------------------------------------------
 # Роуты тем (Topics)
@@ -93,6 +105,7 @@ def delete_topic(class_id: int, topic_id: int, request: Request):
         if not class_row or (class_row["teacher_id"] != user["user_id"] and user["role"] != "admin"):
             raise HTTPException(status_code=403, detail="Нет прав на удаление темы")
 
+        conn.execute("UPDATE coursework SET topic_id = NULL WHERE topic_id = ?", (topic_id,))
         conn.execute("DELETE FROM class_topics WHERE id = ? AND class_id = ?", (topic_id, class_id))
         return {"ok": True}
 
@@ -103,7 +116,7 @@ def delete_topic(class_id: int, topic_id: int, request: Request):
 def _populate_submissions_for_coursework(conn, coursework_id: int, class_id: int, target_students: str):
     now = int(time.time())
     if target_students == "all":
-        students = conn.execute("SELECT student_id FROM class_members WHERE class_id = ?", (class_id,)).fetchall()
+        students = conn.execute("SELECT student_id FROM class_members WHERE class_id = ? AND enrollment_active = 1", (class_id,)).fetchall()
         student_ids = [s["student_id"] for s in students]
     else:
         try:
@@ -113,9 +126,9 @@ def _populate_submissions_for_coursework(conn, coursework_id: int, class_id: int
 
     for sid in student_ids:
         conn.execute("""
-            INSERT OR IGNORE INTO submissions (coursework_id, student_id, status, updated_at)
-            VALUES (?, ?, 'assigned', ?)
-        """, (coursework_id, sid, now))
+            INSERT OR IGNORE INTO submissions (coursework_id, student_id, status, v1_state, created_at, updated_at)
+            VALUES (?, ?, 'assigned', 'NEW', ?, ?)
+        """, (coursework_id, sid, now, now))
 
 @router.get("/classes/{class_id}/coursework")
 def list_coursework(class_id: int, request: Request):
@@ -176,18 +189,27 @@ def create_coursework(class_id: int, req: CourseworkCreateRequest, request: Requ
                         classes_to_publish.append(extra_id)
 
         created_items = []
+        wtype = req.work_type or ("MULTIPLE_CHOICE_QUESTION" if req.choices_json and req.choices_json != "[]" else "ASSIGNMENT")
+        peer_replies = req.peer_replies_enabled if req.peer_replies_enabled is not None else 0
+        close_after = req.close_after_due if req.close_after_due is not None else 0
+        choices = req.choices_json or "[]"
+
         for cid in classes_to_publish:
             topic_for_class = req.topic_id if cid == class_id else None
             cursor = conn.execute("""
                 INSERT INTO coursework (
                     class_id, topic_id, kind, title, instructions,
                     attachments_json, rubric_json, target_students, max_points,
-                    recess_reward, is_homework, state, scheduled_at, due_at, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    recess_reward, is_homework, state, scheduled_at, due_at,
+                    work_type, peer_replies_enabled, close_after_due, choices_json,
+                    creator_user_id, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 cid, topic_for_class, req.kind, req.title.strip(), req.instructions.strip(),
                 req.attachments_json, req.rubric_json, req.target_students, req.max_points,
-                req.recess_reward, req.is_homework, req.state, req.scheduled_at, req.due_at, now
+                req.recess_reward, req.is_homework, req.state, req.scheduled_at, req.due_at,
+                wtype, peer_replies, close_after, choices,
+                user["user_id"], now, now
             ))
 
             cw_id = cursor.lastrowid
@@ -224,12 +246,19 @@ def reuse_coursework(class_id: int, coursework_id: int, req: ReusePostRequest, r
             INSERT INTO coursework (
                 class_id, topic_id, kind, title, instructions,
                 attachments_json, rubric_json, target_students, max_points,
-                recess_reward, is_homework, state, due_at, created_at
-            ) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', ?, ?)
+                recess_reward, is_homework, state, due_at,
+                work_type, peer_replies_enabled, close_after_due, choices_json,
+                creator_user_id, created_at, updated_at
+            ) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             req.target_class_id, source_cw["kind"], source_cw["title"], source_cw["instructions"],
             source_cw["attachments_json"], source_cw["rubric_json"], source_cw["target_students"],
-            source_cw["max_points"], source_cw["recess_reward"], is_homework, due_at, now
+            source_cw["max_points"], source_cw["recess_reward"], is_homework, due_at,
+            source_cw.get("work_type") or "ASSIGNMENT",
+            source_cw.get("peer_replies_enabled") or 0,
+            source_cw.get("close_after_due") or 0,
+            source_cw.get("choices_json") or "[]",
+            user["user_id"], now, now
         ))
 
         new_id = cursor.lastrowid
@@ -259,6 +288,7 @@ def get_coursework(coursework_id: int, request: Request):
 @router.patch("/coursework/{coursework_id}")
 def update_coursework(coursework_id: int, req: CourseworkUpdateRequest, request: Request):
     user = require_teacher(request)
+    now = int(time.time())
     with db_session() as conn:
         cw_row = conn.execute("""
             SELECT cw.*, c.teacher_id, c.grade_level
@@ -273,18 +303,18 @@ def update_coursework(coursework_id: int, req: CourseworkUpdateRequest, request:
         if req.is_homework == 1 and cw_row["grade_level"] == 1:
             raise HTTPException(status_code=400, detail="Для 1-го класса домашние задания запрещены")
 
-        updates = []
-        params = []
+        updates = ["updated_at = ?"]
+        params = [now]
         for field in ("topic_id", "title", "instructions", "attachments_json", "rubric_json",
-                      "target_students", "max_points", "recess_reward", "is_homework", "state", "scheduled_at", "due_at"):
-            val = getattr(req, field)
+                      "target_students", "max_points", "recess_reward", "is_homework", "state", "scheduled_at", "due_at",
+                      "work_type", "peer_replies_enabled", "choices_json", "close_after_due"):
+            val = getattr(req, field, None)
             if val is not None:
                 updates.append(f"{field} = ?")
                 params.append(val)
 
-        if updates:
-            params.append(coursework_id)
-            conn.execute(f"UPDATE coursework SET {', '.join(updates)} WHERE id = ?", params)
+        params.append(coursework_id)
+        conn.execute(f"UPDATE coursework SET {', '.join(updates)} WHERE id = ?", params)
 
         sse_hub.notify_class(cw_row["class_id"], "coursework_updated", {"coursework_id": coursework_id})
         updated = conn.execute("SELECT * FROM coursework WHERE id = ?", (coursework_id,)).fetchone()
@@ -307,3 +337,90 @@ def delete_coursework(coursework_id: int, request: Request):
         conn.execute("DELETE FROM coursework WHERE id = ?", (coursework_id,))
         sse_hub.notify_class(cw_row["class_id"], "coursework_deleted", {"coursework_id": coursework_id})
         return {"ok": True}
+
+# -----------------------------------------------------------------------------
+# Расширения Пакета 7 (Подгруппы и Ответы одноклассников)
+# -----------------------------------------------------------------------------
+
+@router.post("/classes/{class_id}/coursework/assign-groups")
+def assign_coursework_to_groups(class_id: int, req: AssignGroupsRequest, request: Request):
+    user = require_teacher(request)
+    with db_session() as conn:
+        class_row = conn.execute("SELECT teacher_id FROM classes WHERE id = ?", (class_id,)).fetchone()
+        if not class_row or (class_row["teacher_id"] != user["user_id"] and user["role"] != "admin"):
+            raise HTTPException(status_code=403, detail="Нет прав на редактирование заданий в данном классе")
+
+        if not req.group_ids:
+            raise HTTPException(status_code=400, detail="Список групп не может быть пустым")
+
+        placeholders = ",".join("?" for _ in req.group_ids)
+        rows = conn.execute(
+            f"SELECT DISTINCT student_id FROM student_group_members WHERE class_id = ? AND group_id IN ({placeholders})",
+            [class_id, *req.group_ids]
+        ).fetchall()
+
+        student_ids = [r["student_id"] for r in rows]
+        target_students_val = json.dumps(student_ids)
+        now = int(time.time())
+
+        conn.execute("""
+            UPDATE coursework
+            SET assignee_mode = 'INDIVIDUAL_STUDENTS', target_students = ?, updated_at = ?
+            WHERE id = ? AND class_id = ?
+        """, (target_students_val, now, req.coursework_id, class_id))
+
+        # Если задание опубликовано, сразу создаем сдачи для этих учеников
+        cw_row = conn.execute("SELECT state FROM coursework WHERE id = ?", (req.coursework_id,)).fetchone()
+        if cw_row and cw_row["state"] == "published":
+            _populate_submissions_for_coursework(conn, req.coursework_id, class_id, target_students_val)
+
+        return {"ok": True, "student_ids": student_ids}
+
+@router.get("/coursework/{cw_id}/peer-answers")
+def get_peer_answers(cw_id: int, request: Request):
+    user = require_user(request)
+    user_id = user["user_id"]
+    is_teacher = user["role"] in ("teacher", "admin")
+
+    with db_session() as conn:
+        cw = conn.execute("SELECT * FROM coursework WHERE id = ?", (cw_id,)).fetchone()
+        if not cw:
+            raise HTTPException(status_code=404, detail="Задание не найдено")
+
+        # Если это ученик, проверяем, что он сдал работу (TURNED_IN или RETURNED)
+        if not is_teacher:
+            my_sub = conn.execute("""
+                SELECT status, v1_state FROM submissions
+                WHERE coursework_id = ? AND student_id = ?
+            """, (cw_id, user_id)).fetchone()
+
+            has_turned_in = False
+            if my_sub:
+                if my_sub["status"] in ("turned_in", "returned") or my_sub.get("v1_state") in ("TURNED_IN", "RETURNED"):
+                    has_turned_in = True
+
+            if not has_turned_in:
+                raise HTTPException(status_code=403, detail="Ответы одноклассников доступны только после сдачи своего ответа")
+
+        # Получаем ответы одноклассников
+        rows = conn.execute("""
+            SELECT s.student_id, s.short_answer_text, s.payload_json, s.updated_at,
+                   u.handle, u.avatar_seed
+            FROM submissions s
+            JOIN users u ON s.student_id = u.id
+            WHERE s.coursework_id = ? AND (s.status IN ('turned_in', 'returned') OR s.v1_state IN ('TURNED_IN', 'RETURNED'))
+            ORDER BY s.updated_at ASC
+        """, (cw_id,)).fetchall()
+
+        results = []
+        for r in rows:
+            ans_text = r["short_answer_text"] or r["payload_json"] or ""
+            results.append({
+                "student_id": r["student_id"],
+                "handle": r["handle"],
+                "avatar_seed": r["avatar_seed"],
+                "answer": ans_text,
+                "submitted_at": r["updated_at"]
+            })
+
+        return results
