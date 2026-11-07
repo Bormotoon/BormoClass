@@ -39,6 +39,12 @@ def run_migrations(conn: sqlite3.Connection) -> None:
         "verified_teacher": "INTEGER NOT NULL DEFAULT 0",
         "account_disabled": "INTEGER NOT NULL DEFAULT 0",
         "org_unit_id": "INTEGER",
+        "streak_days": "INTEGER NOT NULL DEFAULT 1",
+        "last_active_day": "TEXT",
+        "trial_used": "INTEGER NOT NULL DEFAULT 0",
+        "pro_until": "INTEGER NOT NULL DEFAULT 0",
+        "temp_pin_hash": "TEXT",
+        "temp_pin_exp": "INTEGER DEFAULT 0",
     })
 
     _ensure_columns(conn, "classes", {

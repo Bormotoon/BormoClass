@@ -7,13 +7,28 @@ CREATE TABLE IF NOT EXISTS users (
     id                  INTEGER PRIMARY KEY AUTOINCREMENT,
     handle              TEXT NOT NULL UNIQUE,           -- Позывной: "Бодрый-Енот-428"
     role                TEXT NOT NULL DEFAULT 'student',-- 'student' | 'teacher' | 'admin'
-    password_hash       TEXT NOT NULL,                  -- Формат "salt$hex" (PBKDF2-HMAC-SHA256)
-    recovery_words_hash TEXT NOT NULL,                  -- Формат "salt$hex" от 4 секретных слов восстановления
-    avatar_seed         INTEGER NOT NULL DEFAULT 1,     -- Сид генерации геометрического/звериного аватара
+    password_hash       TEXT NOT NULL,                  -- Формат "salt$hex" или "scrypt$..."
+    recovery_words_hash TEXT NOT NULL,                  -- Хэш от 4 секретных слов восстановления
+    avatar_seed         INTEGER NOT NULL DEFAULT 1,     -- Сид генерации детерминированного аватара
     recess_seconds      INTEGER NOT NULL DEFAULT 0,     -- Игровой баланс кошелька "Билет на перемену"
+    streak_days         INTEGER NOT NULL DEFAULT 1,
+    last_active_day     TEXT,                           -- 'YYYY-MM-DD'
+    trial_used          INTEGER NOT NULL DEFAULT 0,
+    pro_until           INTEGER NOT NULL DEFAULT 0,
+    temp_pin_hash       TEXT,                           -- Одноразовый ПИН сброса от учителя
+    temp_pin_exp        INTEGER DEFAULT 0,
     verified_teacher    INTEGER NOT NULL DEFAULT 0,
     account_disabled    INTEGER NOT NULL DEFAULT 0,
     org_unit_id         INTEGER,
+    created_at          INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS license_keys (
+    code_hash           TEXT PRIMARY KEY,
+    batch_name          TEXT NOT NULL DEFAULT 'dev',
+    duration_days       INTEGER NOT NULL DEFAULT 365,
+    activated_by        INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    activated_at        INTEGER,
     created_at          INTEGER NOT NULL
 );
 
