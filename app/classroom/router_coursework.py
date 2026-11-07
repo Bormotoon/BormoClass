@@ -8,6 +8,7 @@ from app.db import db_session
 from app.passport.middleware import require_user, require_teacher
 from app.classroom.sse_hub import sse_hub
 from app.passport.pii_guard import assert_zero_pii_text, assert_e2ee_text, is_e2ee_envelope
+from app.v1.rbac import get_course_role
 
 router = APIRouter(prefix="/api/classroom", tags=["coursework"])
 
@@ -73,8 +74,12 @@ class AssignGroupsRequest(BaseModel):
 
 @router.get("/classes/{class_id}/topics")
 def list_topics(class_id: int, request: Request):
-    require_user(request)
+    user = require_user(request)
+    u_obj = {"id": user.get("user_id") or user.get("id"), "role": user.get("role")}
     with db_session() as conn:
+        if not get_course_role(conn, class_id, u_obj):
+            raise HTTPException(status_code=403, detail="Нет доступа к темам курса")
+
         rows = conn.execute(
             "SELECT * FROM class_topics WHERE class_id = ? ORDER BY sort_order ASC, id ASC",
             (class_id,)
@@ -136,9 +141,14 @@ def _populate_submissions_for_coursework(conn, coursework_id: int, class_id: int
 def list_coursework(class_id: int, request: Request):
     user = require_user(request)
     user_id = user["user_id"]
+    u_obj = {"id": user_id, "role": user.get("role")}
     is_teacher = user["role"] in ("teacher", "admin")
 
     with db_session() as conn:
+        role = get_course_role(conn, class_id, u_obj)
+        if not role:
+            raise HTTPException(status_code=403, detail="Нет доступа к заданиям курса")
+
         if is_teacher:
             rows = conn.execute("""
                 SELECT cw.*, ct.title as topic_title,
@@ -282,6 +292,7 @@ def reuse_coursework(class_id: int, coursework_id: int, req: ReusePostRequest, r
 @router.get("/coursework/{coursework_id}")
 def get_coursework(coursework_id: int, request: Request):
     user = require_user(request)
+    u_obj = {"id": user.get("user_id") or user.get("id"), "role": user.get("role")}
     with db_session() as conn:
         row = conn.execute("""
             SELECT cw.*, c.title as class_title, c.grade_level, c.teacher_id
@@ -292,6 +303,9 @@ def get_coursework(coursework_id: int, request: Request):
 
         if not row:
             raise HTTPException(status_code=404, detail="Задание не найдено")
+
+        if not get_course_role(conn, row["class_id"], u_obj):
+            raise HTTPException(status_code=403, detail="Нет доступа к данному заданию")
 
         return dict(row)
 

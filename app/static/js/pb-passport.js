@@ -35,6 +35,16 @@
     let cachedUser = null;
 
     function readPass() {
+        const mUi = document.cookie.match(/(?:^|;\s*)pb_pass_ui=([^;]*)/);
+        if (mUi) {
+            const p = safe(() => {
+                const raw = decodeURIComponent(mUi[1]);
+                const jsonStr = new TextDecoder().decode(b64uToBytes(raw.split('.')[0]));
+                const parsed = JSON.parse(jsonStr);
+                return parsed && (!parsed.exp || parsed.exp > nowSec()) ? parsed : null;
+            }, null);
+            if (p) return p;
+        }
         const m = document.cookie.match(/(?:^|;\s*)pb_pass=([^;]*)/);
         if (!m) { return null; }
         return safe(() => {

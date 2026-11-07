@@ -318,7 +318,10 @@ def create_private_comment(
         """, (comment_id,)).fetchone()
 
         result = dict(new_row)
-        sse_hub.notify_class(class_id, "private_comment", result)
+        sse_hub.notify_class(class_id, "private_comment_ping", {
+            "coursework_id": cw_id,
+            "student_id": student_id
+        })
         return result
 
 # -----------------------------------------------------------------------------

@@ -21,8 +21,12 @@ class BoardStateRequest(BaseModel):
 
 @router.get("/api/classroom/board/{class_id}/state")
 def get_board_state(class_id: int, request: Request):
-    require_user(request)
+    user = require_user(request)
     with db_session() as conn:
+        ctx = resolve_auth_context(request, conn)
+        if not get_course_role(conn, class_id, ctx.user):
+            raise HTTPException(status_code=403, detail="Нет доступа к интерактивной доске класса")
+
         row = conn.execute("""
             SELECT id, title, join_pin, grade_level, recess_locked_until, classroom_state_json
             FROM classes
@@ -234,6 +238,12 @@ def update_coursework_board(coursework_id: int, req: CourseworkBoardUpdateReques
 
 @router.get("/api/board/{class_id}/stream")
 async def board_stream(class_id: int, request: Request):
+    require_user(request)
+    with db_session() as conn:
+        ctx = resolve_auth_context(request, conn)
+        if not get_course_role(conn, class_id, ctx.user):
+            raise HTTPException(status_code=403, detail="Нет доступа к потоку событий класса")
+
     queue = sse_hub.subscribe_board(class_id)
 
     async def event_generator():
@@ -266,6 +276,12 @@ async def board_stream(class_id: int, request: Request):
 
 @router.get("/api/classroom/{class_id}/stream")
 async def classroom_stream(class_id: int, request: Request):
+    require_user(request)
+    with db_session() as conn:
+        ctx = resolve_auth_context(request, conn)
+        if not get_course_role(conn, class_id, ctx.user):
+            raise HTTPException(status_code=403, detail="Нет доступа к потоку событий класса")
+
     queue = sse_hub.subscribe_class(class_id)
 
     async def event_generator():
