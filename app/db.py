@@ -45,9 +45,13 @@ def run_migrations(conn: sqlite3.Connection) -> None:
         "pro_until": "INTEGER NOT NULL DEFAULT 0",
         "temp_pin_hash": "TEXT",
         "temp_pin_exp": "INTEGER DEFAULT 0",
+        "e2ee_public_key": "TEXT NOT NULL DEFAULT ''",
+        "e2ee_key_bundle_json": "TEXT NOT NULL DEFAULT '{}'",
     })
 
     _ensure_columns(conn, "classes", {
+        "join_pin_hash": "TEXT NOT NULL DEFAULT ''",
+        "e2ee_key_envelope": "TEXT NOT NULL DEFAULT '{}'",
         "section": "TEXT NOT NULL DEFAULT ''",
         "description_heading": "TEXT NOT NULL DEFAULT ''",
         "description": "TEXT NOT NULL DEFAULT ''",
@@ -72,6 +76,7 @@ def run_migrations(conn: sqlite3.Connection) -> None:
         "is_muted": "INTEGER NOT NULL DEFAULT 0",
         "enrollment_active": "INTEGER NOT NULL DEFAULT 1",
         "student_folder_id": "TEXT",
+        "e2ee_wrapped_key": "TEXT NOT NULL DEFAULT ''",
     })
 
     # Гарантия 152-ФЗ РФ и Zero-PII: удаление любых следов шифротекста заметок
