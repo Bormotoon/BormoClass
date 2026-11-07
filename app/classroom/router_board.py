@@ -12,6 +12,7 @@ from app.passport.middleware import require_user, require_teacher
 from app.classroom.sse_hub import sse_hub
 from app.storage.engine import ensure_student_copy, get_blob_path, save_blob
 from app.v1.rbac import resolve_auth_context, get_course_role
+from app.passport.pii_guard import assert_e2ee_text
 
 router = APIRouter(tags=["board"])
 
@@ -52,6 +53,7 @@ def get_board_state(class_id: int, request: Request):
 @router.post("/api/classroom/board/{class_id}/state")
 def update_board_state(class_id: int, req: BoardStateRequest, request: Request):
     user = require_teacher(request)
+    assert_e2ee_text(req.classroom_state_json, "Состояние доски", allow_empty=True)
     with db_session() as conn:
         row = conn.execute("SELECT teacher_id FROM classes WHERE id = ?", (class_id,)).fetchone()
         if not row or (row["teacher_id"] != user["user_id"] and user["role"] != "admin"):
@@ -152,6 +154,7 @@ def get_coursework_board(coursework_id: int, request: Request, student_id: Optio
 
 @router.post("/api/classroom/coursework/{coursework_id}/board")
 def update_coursework_board(coursework_id: int, req: CourseworkBoardUpdateRequest, request: Request):
+    assert_e2ee_text(req.elements_json, "Холст задания", allow_empty=True)
     with db_session() as conn:
         ctx = resolve_auth_context(request, conn)
         user = ctx.user

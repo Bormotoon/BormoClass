@@ -17,20 +17,28 @@ router = APIRouter(prefix="/api/classroom/classes", tags=["classes"])
 # -----------------------------------------------------------------------------
 
 class CreateClassRequest(BaseModel):
-    title: str = Field(min_length=2, max_length=100)
+    title: str = Field(min_length=2, max_length=250)
     subject_code: str = Field(default="inf", max_length=32)
     grade_level: int = Field(default=8, ge=1, le=11)
-    quarter_goal: str = Field(default="", max_length=250)
+    quarter_goal: str = Field(default="", max_length=500)
+    e2ee_key_envelope: Optional[str] = None
 
 class UpdateClassRequest(BaseModel):
-    title: Optional[str] = Field(default=None, min_length=2, max_length=100)
+    title: Optional[str] = Field(default=None, min_length=2, max_length=250)
     subject_code: Optional[str] = Field(default=None, max_length=32)
     grade_level: Optional[int] = Field(default=None, ge=1, le=11)
-    quarter_goal: Optional[str] = Field(default=None, max_length=250)
+    quarter_goal: Optional[str] = Field(default=None, max_length=500)
+    e2ee_key_envelope: Optional[str] = None
 
 class JoinClassRequest(BaseModel):
-    join_pin: str = Field(min_length=4, max_length=10)
+    join_pin: str = Field(min_length=4, max_length=64)
     seat_number: int = Field(ge=1, le=40)
+    e2ee_wrapped_key: Optional[str] = None
+
+class UpdateClassE2EEKeysRequest(BaseModel):
+    e2ee_key_envelope: Optional[str] = None
+    e2ee_wrapped_key: Optional[str] = None
+    student_id: Optional[int] = None
 
 class UpdateMemberRequest(BaseModel):
     is_present: Optional[int] = Field(default=None, ge=0, le=1)
@@ -68,7 +76,7 @@ def list_classes(request: Request):
         if role in ("teacher", "admin"):
             rows = conn.execute("""
                 SELECT c.id, c.teacher_id, c.title, c.subject_code, c.grade_level, 
-                       c.join_pin, c.quarter_goal, c.recess_locked_until, c.created_at,
+                       c.join_pin, c.e2ee_key_envelope, c.quarter_goal, c.recess_locked_until, c.created_at,
                        (SELECT COUNT(*) FROM class_members cm WHERE cm.class_id = c.id) as students_count
                 FROM classes c
                 WHERE c.teacher_id = ?
@@ -77,8 +85,8 @@ def list_classes(request: Request):
         else:
             rows = conn.execute("""
                 SELECT c.id, c.teacher_id, c.title, c.subject_code, c.grade_level, 
-                       c.join_pin, c.quarter_goal, c.recess_locked_until, c.created_at,
-                       cm.seat_number, cm.traffic_light,
+                       c.join_pin, c.e2ee_key_envelope, c.quarter_goal, c.recess_locked_until, c.created_at,
+                       cm.seat_number, cm.traffic_light, cm.e2ee_wrapped_key,
                        (SELECT COUNT(*) FROM class_members cm2 WHERE cm2.class_id = c.id) as students_count
                 FROM classes c
                 JOIN class_members cm ON c.id = cm.class_id
@@ -98,9 +106,13 @@ def create_class(req: CreateClassRequest, request: Request):
         cursor = conn.execute("""
             INSERT INTO classes (
                 teacher_id, title, subject_code, grade_level, join_pin,
-                quarter_goal, recess_locked_until, classroom_state_json, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, 0, '{}', ?)
-        """, (user["user_id"], req.title.strip(), req.subject_code.strip(), req.grade_level, pin, req.quarter_goal.strip(), now))
+                e2ee_key_envelope, quarter_goal, recess_locked_until, classroom_state_json, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, '{}', ?)
+        """, (
+            user["user_id"], req.title.strip(), req.subject_code.strip(),
+            req.grade_level, pin, req.e2ee_key_envelope or "{}",
+            req.quarter_goal.strip(), now
+        ))
 
         class_id = cursor.lastrowid
         row = conn.execute("SELECT * FROM classes WHERE id = ?", (class_id,)).fetchone()
@@ -152,6 +164,9 @@ def update_class(class_id: int, req: UpdateClassRequest, request: Request):
         if req.quarter_goal is not None:
             updates.append("quarter_goal = ?")
             params.append(req.quarter_goal.strip())
+        if req.e2ee_key_envelope is not None:
+            updates.append("e2ee_key_envelope = ?")
+            params.append(req.e2ee_key_envelope)
 
         if updates:
             params.append(class_id)
@@ -181,8 +196,8 @@ def join_class(req: JoinClassRequest, request: Request):
 
     with db_session() as conn:
         class_row = conn.execute(
-            "SELECT id, title, grade_level FROM classes WHERE join_pin = ?",
-            (req.join_pin.strip(),)
+            "SELECT id, title, grade_level, e2ee_key_envelope FROM classes WHERE join_pin = ? OR (join_pin_hash != '' AND join_pin_hash = ?)",
+            (req.join_pin.strip(), req.join_pin.strip())
         ).fetchone()
 
         if not class_row:
@@ -207,12 +222,13 @@ def join_class(req: JoinClassRequest, request: Request):
 
         # Добавляем или обновляем парту ученика
         conn.execute("""
-            INSERT INTO class_members (class_id, student_id, seat_number, is_present, traffic_light, joined_at)
-            VALUES (?, ?, ?, 1, 'green', ?)
+            INSERT INTO class_members (class_id, student_id, seat_number, is_present, traffic_light, e2ee_wrapped_key, joined_at)
+            VALUES (?, ?, ?, 1, 'green', ?, ?)
             ON CONFLICT(class_id, student_id) DO UPDATE SET
                 seat_number = excluded.seat_number,
-                is_present = 1
-        """, (class_id, student_id, req.seat_number, now))
+                is_present = 1,
+                e2ee_wrapped_key = CASE WHEN excluded.e2ee_wrapped_key != '' THEN excluded.e2ee_wrapped_key ELSE class_members.e2ee_wrapped_key END
+        """, (class_id, student_id, req.seat_number, req.e2ee_wrapped_key or "", now))
 
         # Назначаем все активные опубликованные задания класса новому ученику
         active_cw = conn.execute("""
@@ -241,8 +257,32 @@ def join_class(req: JoinClassRequest, request: Request):
             "ok": True,
             "class_id": class_id,
             "title": class_row["title"],
-            "seat_number": req.seat_number
+            "seat_number": req.seat_number,
+            "e2ee_key_envelope": class_row["e2ee_key_envelope"] if "e2ee_key_envelope" in class_row.keys() else "{}",
+            "e2ee_wrapped_key": req.e2ee_wrapped_key or ""
         }
+
+@router.put("/{class_id}/e2ee-keys")
+def update_class_e2ee_keys(class_id: int, req: UpdateClassE2EEKeysRequest, request: Request):
+    user = require_user(request)
+    uid = user["user_id"]
+    role = user["role"]
+    with db_session() as conn:
+        cls = conn.execute("SELECT teacher_id FROM classes WHERE id = ?", (class_id,)).fetchone()
+        if not cls:
+            raise HTTPException(status_code=404, detail="Класс не найден")
+        is_teacher = (role in ("teacher", "admin") and cls["teacher_id"] == uid)
+        
+        if is_teacher and req.e2ee_key_envelope is not None:
+            conn.execute("UPDATE classes SET e2ee_key_envelope = ? WHERE id = ?", (req.e2ee_key_envelope, class_id))
+        
+        target_student_id = req.student_id if (is_teacher and req.student_id) else uid
+        if req.e2ee_wrapped_key is not None:
+            conn.execute(
+                "UPDATE class_members SET e2ee_wrapped_key = ? WHERE class_id = ? AND student_id = ?",
+                (req.e2ee_wrapped_key, class_id, target_student_id)
+            )
+        return {"ok": True}
 
 @router.get("/{class_id}/members")
 def get_class_members(class_id: int, request: Request):

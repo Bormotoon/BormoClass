@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from app.db import db_session
 from app.passport.middleware import require_user, require_teacher
-from app.passport.pii_guard import assert_zero_pii_text
+from app.passport.pii_guard import assert_zero_pii_text, assert_e2ee_text, is_e2ee_envelope
 
 router = APIRouter(tags=["quizzes_and_sets"])
 
@@ -20,7 +20,7 @@ router = APIRouter(tags=["quizzes_and_sets"])
 class QuizCreateRequest(BaseModel):
     class_id: int
     coursework_id: Optional[int] = None
-    quiz_title: str = Field(min_length=1, max_length=200)
+    quiz_title: str = Field(min_length=1, max_length=2000)
     description: str = Field(default="")
     questions_json: str = Field(default="[]")
     shuffle_questions: int = Field(default=0, ge=0, le=1)
@@ -30,7 +30,7 @@ class QuizCreateRequest(BaseModel):
     show_correct_answers: int = Field(default=1, ge=0, le=1)
 
 class QuizUpdateRequest(BaseModel):
-    quiz_title: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    quiz_title: Optional[str] = Field(default=None, min_length=1, max_length=2000)
     description: Optional[str] = None
     questions_json: Optional[str] = None
     shuffle_questions: Optional[int] = Field(default=None, ge=0, le=1)
@@ -46,11 +46,11 @@ class QuizSubmitRequest(BaseModel):
 class PracticeSetCreateRequest(BaseModel):
     class_id: int
     coursework_id: Optional[int] = None
-    set_title: str = Field(min_length=1, max_length=200)
+    set_title: str = Field(min_length=1, max_length=2000)
     cards_json: str = Field(default="[]")
 
 class PracticeSetUpdateRequest(BaseModel):
-    set_title: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    set_title: Optional[str] = Field(default=None, min_length=1, max_length=2000)
     cards_json: Optional[str] = None
 
 class PracticeCardCheckRequest(BaseModel):
@@ -62,6 +62,8 @@ class PracticeCardCheckRequest(BaseModel):
 class OriginalityCheckRequest(BaseModel):
     student_id: Optional[int] = None
     content_text: Optional[str] = None
+    fingerprints: Optional[List[int]] = None
+    ast_hashes: Optional[List[str]] = None
 
 class LearningGoalsRequest(BaseModel):
     standard_ids: List[str]
@@ -88,6 +90,11 @@ def _score_single_question(q: dict, ans: Any) -> float:
         return max_pts if sorted(correct_list) == sorted(given_list) else 0.0
 
     elif q_type == "SHORT_TEXT":
+        correct_hmac = q.get("correct_hmac")
+        if correct_hmac:
+            ans_hmac = ans if isinstance(ans, str) else (ans.get("hmac") if isinstance(ans, dict) else "")
+            if ans_hmac == correct_hmac:
+                return max_pts
         correct = str(q.get("correct", "")).strip().lower()
         return max_pts if str(ans).strip().lower() == correct else 0.0
 
@@ -122,6 +129,8 @@ def _score_single_question(q: dict, ans: Any) -> float:
 @router.post("/quizzes")
 def create_quiz(req: QuizCreateRequest, request: Request):
     user = require_teacher(request)
+    assert_e2ee_text(req.quiz_title, "Название квиза")
+    assert_e2ee_text(req.description, "Описание квиза", allow_empty=True)
     now = int(time.time())
 
     try:
@@ -203,6 +212,10 @@ def get_quiz(quiz_id: int, request: Request):
 @router.patch("/quizzes/{quiz_id}")
 def update_quiz(quiz_id: int, req: QuizUpdateRequest, request: Request):
     user = require_teacher(request)
+    if req.quiz_title is not None:
+        assert_e2ee_text(req.quiz_title, "Название квиза")
+    if req.description is not None:
+        assert_e2ee_text(req.description, "Описание квиза", allow_empty=True)
     with db_session() as conn:
         q_row = conn.execute("SELECT * FROM quizzes WHERE id = ?", (quiz_id,)).fetchone()
         if not q_row:
@@ -251,12 +264,13 @@ def submit_quiz(quiz_id: int, req: QuizSubmitRequest, request: Request):
             q_type = q.get("type")
             if q_type == "SHORT_TEXT" and ans is not None:
                 ans_str = str(ans).strip()
-                if len(ans_str) > 64:
-                    raise HTTPException(
-                        status_code=422,
-                        detail="Ответ типа SHORT_TEXT не может превышать 64 символа (Zero-PII)."
-                    )
-                assert_zero_pii_text(ans_str)
+                if not is_e2ee_envelope(ans_str):
+                    if len(ans_str) > 64:
+                        raise HTTPException(
+                            status_code=422,
+                            detail="Ответ типа SHORT_TEXT не может превышать 64 символа (Zero-PII)."
+                        )
+                    assert_zero_pii_text(ans_str)
             earned = _score_single_question(q, ans)
             total_score += earned
 
@@ -319,6 +333,7 @@ def submit_quiz(quiz_id: int, req: QuizSubmitRequest, request: Request):
 @router.post("/practice-sets")
 def create_practice_set(req: PracticeSetCreateRequest, request: Request):
     user = require_teacher(request)
+    assert_e2ee_text(req.set_title, "Название практикума")
     now = int(time.time())
     with db_session() as conn:
         cursor = conn.execute("""
@@ -366,6 +381,8 @@ def get_practice_set(id: int, request: Request):
 @router.patch("/practice-sets/{id}")
 def update_practice_set(id: int, req: PracticeSetUpdateRequest, request: Request):
     user = require_teacher(request)
+    if req.set_title is not None:
+        assert_e2ee_text(req.set_title, "Название практикума")
     with db_session() as conn:
         row = conn.execute("SELECT * FROM practice_sets WHERE id = ?", (id,)).fetchone()
         if not row:
@@ -390,6 +407,8 @@ def update_practice_set(id: int, req: PracticeSetUpdateRequest, request: Request
 @router.post("/practice-sets/{id}/check-card")
 def check_practice_card(id: int, req: PracticeCardCheckRequest, request: Request):
     user = require_user(request)
+    if req.scratchpad_json:
+        assert_e2ee_text(req.scratchpad_json, "Черновик", allow_empty=True)
     student_id = user["user_id"]
     now = int(time.time())
 
@@ -414,8 +433,13 @@ def check_practice_card(id: int, req: PracticeCardCheckRequest, request: Request
             raise HTTPException(status_code=404, detail="Карточка не найдена")
 
         expected = target_card.get("answer")
+        card_hmac = target_card.get("answer_hmac")
         is_correct = False
-        if isinstance(expected, (int, float)):
+        if card_hmac and isinstance(req.answer, dict) and req.answer.get("hmac"):
+            is_correct = (req.answer.get("hmac") == card_hmac)
+        elif card_hmac and isinstance(req.answer, str) and req.answer == card_hmac:
+            is_correct = True
+        elif isinstance(expected, (int, float)):
             try:
                 is_correct = abs(float(req.answer) - float(expected)) <= 0.001
             except Exception:

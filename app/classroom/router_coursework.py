@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from app.db import db_session
 from app.passport.middleware import require_user, require_teacher
 from app.classroom.sse_hub import sse_hub
-from app.passport.pii_guard import assert_zero_pii_text
+from app.passport.pii_guard import assert_zero_pii_text, assert_e2ee_text, is_e2ee_envelope
 
 router = APIRouter(prefix="/api/classroom", tags=["coursework"])
 
@@ -16,14 +16,14 @@ router = APIRouter(prefix="/api/classroom", tags=["coursework"])
 # -----------------------------------------------------------------------------
 
 class TopicCreateRequest(BaseModel):
-    title: str = Field(min_length=1, max_length=100)
+    title: str = Field(min_length=1, max_length=2000)
     frp_topic_id: Optional[str] = Field(default=None, max_length=64)
     sort_order: int = Field(default=0)
 
 class CourseworkCreateRequest(BaseModel):
     topic_id: Optional[int] = None
     kind: str = Field(default="assignment", pattern="^(announcement|assignment|quiz|question|material)$")
-    title: str = Field(min_length=1, max_length=200)
+    title: str = Field(min_length=1, max_length=2000)
     instructions: str = Field(default="")
     attachments_json: str = Field(default="[]")
     rubric_json: str = Field(default="[]")
@@ -42,7 +42,7 @@ class CourseworkCreateRequest(BaseModel):
 
 class CourseworkUpdateRequest(BaseModel):
     topic_id: Optional[int] = None
-    title: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    title: Optional[str] = Field(default=None, min_length=1, max_length=2000)
     instructions: Optional[str] = None
     attachments_json: Optional[str] = None
     rubric_json: Optional[str] = None
@@ -84,6 +84,7 @@ def list_topics(class_id: int, request: Request):
 @router.post("/classes/{class_id}/topics")
 def create_topic(class_id: int, req: TopicCreateRequest, request: Request):
     user = require_teacher(request)
+    assert_e2ee_text(req.title, "Название темы")
     with db_session() as conn:
         class_row = conn.execute("SELECT teacher_id FROM classes WHERE id = ?", (class_id,)).fetchone()
         if not class_row or (class_row["teacher_id"] != user["user_id"] and user["role"] != "admin"):
@@ -170,6 +171,9 @@ def create_coursework(class_id: int, req: CourseworkCreateRequest, request: Requ
     assert_zero_pii_text(req.title)
     if req.instructions:
         assert_zero_pii_text(req.instructions)
+    assert_e2ee_text(req.title, "Название задания")
+    if req.instructions:
+        assert_e2ee_text(req.instructions, "Инструкции", allow_empty=True)
 
     with db_session() as conn:
         class_row = conn.execute("SELECT teacher_id, grade_level FROM classes WHERE id = ?", (class_id,)).fetchone()
@@ -309,9 +313,9 @@ def update_coursework(coursework_id: int, req: CourseworkUpdateRequest, request:
             raise HTTPException(status_code=400, detail="Для 1-го класса домашние задания запрещены")
 
         if req.title:
-            assert_zero_pii_text(req.title)
+            assert_e2ee_text(req.title, "Название задания")
         if req.instructions:
-            assert_zero_pii_text(req.instructions)
+            assert_e2ee_text(req.instructions, "Инструкции", allow_empty=True)
 
         updates = ["updated_at = ?"]
         params = [now]

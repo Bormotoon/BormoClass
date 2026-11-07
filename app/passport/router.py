@@ -44,6 +44,8 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=4, max_length=128)
     handle: Optional[str] = None
     ticket: Optional[str] = None
+    e2ee_public_key: Optional[str] = None
+    e2ee_key_bundle_json: Optional[str] = None
 
 class LoginRequest(BaseModel):
     handle: str = Field(min_length=3, max_length=64)
@@ -51,6 +53,8 @@ class LoginRequest(BaseModel):
     temp_pin: Optional[str] = None
     new_password: Optional[str] = None
     ticket: Optional[str] = None
+    e2ee_public_key: Optional[str] = None
+    e2ee_key_bundle_json: Optional[str] = None
 
 class RecoverRequest(BaseModel):
     handle: str = Field(min_length=3, max_length=64)
@@ -58,6 +62,12 @@ class RecoverRequest(BaseModel):
     words: Optional[List[str]] = None
     new_password: str = Field(min_length=4, max_length=128)
     ticket: Optional[str] = None
+    e2ee_public_key: Optional[str] = None
+    e2ee_key_bundle_json: Optional[str] = None
+
+class E2EEBundleRequest(BaseModel):
+    e2ee_public_key: str = ""
+    e2ee_key_bundle_json: str = "{}"
 
 class SolveTaskRequest(BaseModel):
     task_id: str = Field(min_length=1, max_length=128)
@@ -184,7 +194,8 @@ def get_me(request: Request):
     user_id = user_state.get("user_id") or user_state.get("uid")
     with db_session() as conn:
         row = conn.execute("""
-            SELECT id, handle, role, avatar_seed, recess_seconds, streak_days, trial_used, pro_until, created_at 
+            SELECT id, handle, role, avatar_seed, recess_seconds, streak_days, trial_used, pro_until,
+                   e2ee_public_key, e2ee_key_bundle_json, created_at 
             FROM users WHERE id = ?
         """, (user_id,)).fetchone()
         if not row:
@@ -228,6 +239,8 @@ def get_me(request: Request):
             "cid": class_info["id"] if class_info else None,
             "class_title": class_info["title"] if class_info else None,
             "seat_number": class_info["seat_number"] if class_info else None,
+            "e2ee_public_key": row["e2ee_public_key"] if "e2ee_public_key" in row.keys() else "",
+            "e2ee_key_bundle_json": row["e2ee_key_bundle_json"] if "e2ee_key_bundle_json" in row.keys() else "{}",
             "created_at": row["created_at"],
             "recess_locked": recess_locked
         }
@@ -262,9 +275,13 @@ def register(req: RegisterRequest, response: Response):
         cursor = conn.execute("""
             INSERT INTO users (
                 handle, role, password_hash, recovery_words_hash,
-                avatar_seed, recess_seconds, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (handle, req.role, password_hash, recovery_words_hash, avatar_seed, initial_recess, now))
+                avatar_seed, recess_seconds, e2ee_public_key, e2ee_key_bundle_json, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            handle, req.role, password_hash, recovery_words_hash,
+            avatar_seed, initial_recess, req.e2ee_public_key or "",
+            req.e2ee_key_bundle_json or "{}", now
+        ))
         
         user_id = cursor.lastrowid
 
@@ -275,6 +292,8 @@ def register(req: RegisterRequest, response: Response):
             "role": req.role,
             "avatar_seed": avatar_seed,
             "recess_seconds": initial_recess,
+            "e2ee_public_key": req.e2ee_public_key or "",
+            "e2ee_key_bundle_json": req.e2ee_key_bundle_json or "{}",
             "pro_until": 0,
             "class_id": None
         }
@@ -290,7 +309,9 @@ def register(req: RegisterRequest, response: Response):
                 "avatar_seed": avatar_seed,
                 "seed": avatar_seed,
                 "recess_seconds": initial_recess,
-                "rec_bal": initial_recess
+                "rec_bal": initial_recess,
+                "e2ee_public_key": req.e2ee_public_key or "",
+                "e2ee_key_bundle_json": req.e2ee_key_bundle_json or "{}"
             },
             "recovery_words": recovery_words
         }
@@ -308,7 +329,8 @@ def login(req: LoginRequest, response: Response):
     with db_session() as conn:
         row = conn.execute("""
             SELECT id, handle, role, password_hash, avatar_seed, recess_seconds, 
-                   streak_days, trial_used, pro_until, temp_pin_hash, temp_pin_exp, created_at 
+                   streak_days, trial_used, pro_until, temp_pin_hash, temp_pin_exp,
+                   e2ee_public_key, e2ee_key_bundle_json, created_at 
             FROM users WHERE handle = ?
         """, (handle,)).fetchone()
 
@@ -349,6 +371,24 @@ def login(req: LoginRequest, response: Response):
 
         limiter.reset(limiter_key)
 
+        if req.e2ee_public_key or req.e2ee_key_bundle_json:
+            up_cols = []
+            up_params = []
+            if req.e2ee_public_key is not None:
+                up_cols.append("e2ee_public_key = ?")
+                up_params.append(req.e2ee_public_key)
+            if req.e2ee_key_bundle_json is not None:
+                up_cols.append("e2ee_key_bundle_json = ?")
+                up_params.append(req.e2ee_key_bundle_json)
+            if up_cols:
+                up_params.append(row["id"])
+                conn.execute(f"UPDATE users SET {', '.join(up_cols)} WHERE id = ?", up_params)
+                pub_key = req.e2ee_public_key if req.e2ee_public_key is not None else (row["e2ee_public_key"] or "")
+                bundle_json = req.e2ee_key_bundle_json if req.e2ee_key_bundle_json is not None else (row["e2ee_key_bundle_json"] or "{}")
+        else:
+            pub_key = row["e2ee_public_key"] if "e2ee_public_key" in row.keys() else ""
+            bundle_json = row["e2ee_key_bundle_json"] if "e2ee_key_bundle_json" in row.keys() else "{}"
+
         pro = row["pro_until"] if "pro_until" in row.keys() else 0
         user_data = {
             "user_id": row["id"],
@@ -357,6 +397,8 @@ def login(req: LoginRequest, response: Response):
             "role": row["role"],
             "avatar_seed": row["avatar_seed"],
             "recess_seconds": row["recess_seconds"],
+            "e2ee_public_key": pub_key,
+            "e2ee_key_bundle_json": bundle_json,
             "pro_until": pro
         }
         _set_auth_cookie(response, user_data)
@@ -365,13 +407,15 @@ def login(req: LoginRequest, response: Response):
             "user": {
                 "id": row["id"],
                 "uid": row["id"],
-                "handle": row["handle"],
-                "h": row["handle"],
+                "handle": handle,
+                "h": handle,
                 "role": row["role"],
                 "avatar_seed": row["avatar_seed"],
                 "seed": row["avatar_seed"],
                 "recess_seconds": row["recess_seconds"],
                 "rec_bal": row["recess_seconds"],
+                "e2ee_public_key": pub_key,
+                "e2ee_key_bundle_json": bundle_json,
                 "created_at": row["created_at"]
             }
         }
@@ -391,7 +435,7 @@ def recover_password(req: RecoverRequest, response: Response):
 
     with db_session() as conn:
         row = conn.execute(
-            "SELECT id, handle, role, avatar_seed, recess_seconds, recovery_words_hash FROM users WHERE handle = ?",
+            "SELECT id, handle, role, avatar_seed, recess_seconds, recovery_words_hash, e2ee_public_key, e2ee_key_bundle_json FROM users WHERE handle = ?",
             (handle,)
         ).fetchone()
 
@@ -402,7 +446,20 @@ def recover_password(req: RecoverRequest, response: Response):
             )
 
         new_hash = hash_secret(req.new_password)
-        conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, row["id"]))
+        up_cols = ["password_hash = ?"]
+        up_params = [new_hash]
+        pub_key = row["e2ee_public_key"] if "e2ee_public_key" in row.keys() else ""
+        bundle_json = row["e2ee_key_bundle_json"] if "e2ee_key_bundle_json" in row.keys() else "{}"
+        if req.e2ee_public_key is not None:
+            up_cols.append("e2ee_public_key = ?")
+            up_params.append(req.e2ee_public_key)
+            pub_key = req.e2ee_public_key
+        if req.e2ee_key_bundle_json is not None:
+            up_cols.append("e2ee_key_bundle_json = ?")
+            up_params.append(req.e2ee_key_bundle_json)
+            bundle_json = req.e2ee_key_bundle_json
+        up_params.append(row["id"])
+        conn.execute(f"UPDATE users SET {', '.join(up_cols)} WHERE id = ?", up_params)
 
         user_data = {
             "user_id": row["id"],
@@ -410,11 +467,24 @@ def recover_password(req: RecoverRequest, response: Response):
             "handle": row["handle"],
             "role": row["role"],
             "avatar_seed": row["avatar_seed"],
-            "recess_seconds": row["recess_seconds"]
+            "recess_seconds": row["recess_seconds"],
+            "e2ee_public_key": pub_key,
+            "e2ee_key_bundle_json": bundle_json
         }
         _set_auth_cookie(response, user_data)
 
         return {"ok": True, "message": "Пароль успешно обновлён", "user": user_data}
+
+@router.put("/e2ee-bundle")
+def update_e2ee_bundle(req: E2EEBundleRequest, request: Request):
+    user = require_user(request)
+    uid = user.get("user_id") or user.get("uid") or user.get("id")
+    with db_session() as conn:
+        conn.execute(
+            "UPDATE users SET e2ee_public_key = ?, e2ee_key_bundle_json = ? WHERE id = ?",
+            (req.e2ee_public_key, req.e2ee_key_bundle_json, uid)
+        )
+    return {"ok": True, "e2ee_public_key": req.e2ee_public_key, "e2ee_key_bundle_json": req.e2ee_key_bundle_json}
 
 @router.post("/logout")
 def logout(response: Response):
