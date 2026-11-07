@@ -17,3 +17,5 @@ build/
 .env
 data/
 app/static/passport/portraits/
+tests/e2e_results/
+
