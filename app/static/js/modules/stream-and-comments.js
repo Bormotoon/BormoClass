@@ -831,7 +831,7 @@ async function loadPostComments(courseId, parentKind, parentId, container, curre
       btn.onclick = async () => {
         if (!confirm("Удалить этот комментарий?")) return;
         try {
-          await v1Fetch(`/api/classroom/comments/${btn.dataset.id}`, { method: "DELETE" });
+          await v1Fetch(`/api/classroom/classes/${courseId}/comments/${btn.dataset.id}`, { method: "DELETE" });
           loadPostComments(courseId, parentKind, parentId, container, currentUser);
         } catch (err) {
           alert("Не удалось удалить комментарий: " + err.message);

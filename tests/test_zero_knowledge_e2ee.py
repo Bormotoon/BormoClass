@@ -258,7 +258,7 @@ def test_5_quiz_autocheck_and_sou_simonov_accuracy(client):
         }
     ]
 
-    quiz_res = client.post("/quizzes", json={
+    quiz_res = client.post("/api/classroom/quizzes", json={
         "class_id": class_id,
         "quiz_title": "Контрольная работа по оптике и механике",
         "description": "2 вопроса",
@@ -271,7 +271,7 @@ def test_5_quiz_autocheck_and_sou_simonov_accuracy(client):
     s_res = client.post("/api/passport/register", json={"role": "student", "password": "quizStudPass1"}).json()["user"]
     client.post("/api/passport/login", json={"handle": s_res["handle"], "password": "quizStudPass1"})
 
-    submit_res = client.post(f"/quizzes/{quiz_id}/submit", json={
+    submit_res = client.post(f"/api/classroom/quizzes/{quiz_id}/submit", json={
         "answers_json": {
             "1": "300000",  # правильный ответ (+2 балла)
             "2": 9.81       # правильный ответ с допуском (+3 балла)

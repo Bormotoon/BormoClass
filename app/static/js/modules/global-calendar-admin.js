@@ -370,7 +370,7 @@ export class CalendarView {
               padding: 6px 12px; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant, #c4c7c5);
               background: var(--md-sys-color-surface, #ffffff); font-size: 0.82rem; cursor: pointer; font-weight: 600;
             ">🔗 Скопировать WebCal .ics ссылку</button>
-            <a id="calBtnDownloadIcs" href="/api/classroom/calendar/user_1.ics" download="bormoclass.ics" class="btn btn-secondary" style="
+            <a id="calBtnDownloadIcs" href="/api/classroom/calendar/user_${window.pbPassport?.getUser()?.id || 1}.ics" download="bormoclass.ics" class="btn btn-secondary" style="
               padding: 6px 12px; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant, #c4c7c5);
               background: var(--md-sys-color-surface, #ffffff); font-size: 0.82rem; cursor: pointer; font-weight: 600; text-decoration: none; color: inherit;
             ">📥 Скачать .ics</a>
@@ -417,7 +417,8 @@ export class CalendarView {
     }
     if (btnWebcal) {
       btnWebcal.onclick = () => {
-        const url = `${window.location.origin}/api/classroom/calendar/user_1.ics`;
+        const calId = window.pbPassport?.getUser()?.id || 1;
+        const url = `${window.location.origin}/api/classroom/calendar/user_${calId}.ics`;
         navigator.clipboard.writeText(url).then(() => {
           alert("WebCal ссылка скопирована в буфер обмена!");
         });
@@ -524,8 +525,11 @@ export class NotificationCenter {
     try {
       const res = await fetch("/api/classroom/notifications");
       if (res.ok) {
-        this.notifications = await res.json();
-        this.unreadCount = this.notifications.filter((n) => !n.is_read).length;
+        const data = await res.json();
+        this.notifications = Array.isArray(data) ? data : (data.notifications || []);
+        this.unreadCount = typeof data.unread_count === "number"
+          ? data.unread_count
+          : this.notifications.filter((n) => !n.is_read).length;
         if (this.badgeElement) {
           this.badgeElement.textContent = this.unreadCount;
           this.badgeElement.style.display = this.unreadCount > 0 ? "inline-block" : "none";

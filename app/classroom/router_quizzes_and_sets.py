@@ -11,7 +11,7 @@ from app.db import db_session
 from app.passport.middleware import require_user, require_teacher
 from app.passport.pii_guard import assert_zero_pii_text, assert_e2ee_text, is_e2ee_envelope
 
-router = APIRouter(tags=["quizzes_and_sets"])
+router = APIRouter(prefix="/api/classroom", tags=["quizzes_and_sets"])
 
 # -----------------------------------------------------------------------------
 # Pydantic Schemas
@@ -73,7 +73,11 @@ class LearningGoalsRequest(BaseModel):
 # -----------------------------------------------------------------------------
 
 def _score_single_question(q: dict, ans: Any) -> float:
-    q_type = q.get("type", "SINGLE_CHOICE")
+    q_type = str(q.get("type", "SINGLE_CHOICE")).upper()
+    if q_type == "SHORT_ANSWER":
+        q_type = "SHORT_TEXT"
+    elif q_type == "NUMERIC":
+        q_type = "NUMERIC_TOLERANCE"
     max_pts = float(q.get("points", 1.0))
     if ans is None:
         return 0.0
