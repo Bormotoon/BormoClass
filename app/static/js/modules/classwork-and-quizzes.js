@@ -51,8 +51,8 @@ export function renderClassworkTab(container, courseId, user, options = {}) {
           <ul class="topics-filter-list" id="topicsFilterList">
             <li class="topic-filter-item active" data-topic-id="ALL">Все темы</li>
             ${topics.map(t => `
-              <li class="topic-filter-item" data-topic-id="${t.id}" title="${t.name}">
-                ${t.name}
+              <li class="topic-filter-item" data-topic-id="${escapeHtml(String(t.id))}" title="${escapeHtml(t.name || "")}">
+                ${escapeHtml(t.name || "")}
               </li>
             `).join("")}
           </ul>
@@ -171,12 +171,12 @@ function createTopicSection(courseId, topic, items, user, options = {}) {
   const topicTitle = topic ? topic.name : "Без темы";
   section.innerHTML = `
     <div class="topic-section-header">
-      <h2 class="topic-title">${topicTitle}</h2>
+      <h2 class="topic-title">${escapeHtml(topicTitle)}</h2>
       ${(topic && isTeacher) ? `
-        <button class="topic-menu-btn" data-topic-id="${topic.id}">⋮</button>
+        <button class="topic-menu-btn" data-topic-id="${escapeHtml(String(topic.id))}">⋮</button>
       ` : ""}
     </div>
-    <div class="topic-items-list" id="topicList_${topic ? topic.id : 'none'}"></div>
+    <div class="topic-items-list" id="topicList_${topic ? escapeHtml(String(topic.id)) : 'none'}"></div>
   `;
 
   const listEl = section.querySelector(".topic-items-list");
@@ -198,16 +198,16 @@ function createTopicSection(courseId, topic, items, user, options = {}) {
       <div class="cw-card-row">
         <span class="cw-icon">${icon}</span>
         <div class="cw-info">
-          <div class="cw-title">${item.title || "Без названия"}</div>
-          <div class="cw-due">${dueText}</div>
+          <div class="cw-title">${escapeHtml(item.title || "Без названия")}</div>
+          <div class="cw-due">${escapeHtml(dueText)}</div>
         </div>
         <div class="cw-actions">
-          ${item.maxPoints !== undefined ? `<span class="cw-points-badge">${item.maxPoints} б.</span>` : ""}
-          ${isTeacher ? `<button class="cw-menu-btn" data-id="${item.id}">⋮</button>` : ""}
+          ${item.maxPoints !== undefined ? `<span class="cw-points-badge">${escapeHtml(String(item.maxPoints))} б.</span>` : ""}
+          ${isTeacher ? `<button class="cw-menu-btn" data-id="${escapeHtml(String(item.id))}">⋮</button>` : ""}
         </div>
       </div>
       <div class="cw-card-details" style="display: none;">
-        <div class="cw-instructions">${item.description || "Инструкций нет."}</div>
+        <div class="cw-instructions">${escapeHtml(item.description || "Инструкций нет.")}</div>
         ${item.materials && item.materials.length > 0 ? `
           <div class="cw-materials-chips">
             ${item.materials.map(m => {
@@ -215,18 +215,18 @@ function createTopicSection(courseId, topic, items, user, options = {}) {
               const title = file.localFile?.title || file.driveFile?.title || file.title || "Вложение";
               const mode = file.shareMode || "VIEW";
               const modeLabel = mode === "STUDENT_COPY" ? "Копия для каждого" : mode === "EDIT" ? "Редактирование" : "Просмотр";
-              return `<span class="mat-chip" title="Режим: ${modeLabel}">📎 ${title} <small>(${modeLabel})</small></span>`;
+              return `<span class="mat-chip" title="Режим: ${escapeHtml(modeLabel)}">📎 ${escapeHtml(title)} <small>(${escapeHtml(modeLabel)})</small></span>`;
             }).join("")}
           </div>
         ` : ""}
         <div class="cw-footer-actions">
           ${item.workType === "QUIZ_ASSIGNMENT" ? `
-            <button class="btn btn-sm btn-primary play-quiz-btn" data-id="${item.id}">Пройти тест</button>
+            <button class="btn btn-sm btn-primary play-quiz-btn" data-id="${escapeHtml(String(item.id))}">Пройти тест</button>
           ` : ""}
           ${item.workType === "PRACTICE_SET" ? `
-            <button class="btn btn-sm btn-primary play-set-btn" data-id="${item.id}">Открыть практикум</button>
+            <button class="btn btn-sm btn-primary play-set-btn" data-id="${escapeHtml(String(item.id))}">Открыть практикум</button>
           ` : ""}
-          <a href="#class/${courseId}/submission/${item.id}" class="btn btn-sm btn-secondary">Подробнее</a>
+          <a href="#class/${escapeHtml(String(courseId))}/submission/${escapeHtml(String(item.id))}" class="btn btn-sm btn-secondary">Подробнее</a>
         </div>
       </div>
     `;
@@ -305,12 +305,12 @@ export function renderCourseWorkDialog(courseId, initialData = {}, options = {})
         <!-- Left Column: Content & Materials -->
         <div class="dialog-left-col">
           <div class="form-group">
-            <input type="text" id="cwTitleInput" class="form-control form-control-lg" placeholder="Название задания" required value="${initialData.title || ''}" />
+            <input type="text" id="cwTitleInput" class="form-control form-control-lg" placeholder="Название задания" required value="${escapeHtml(initialData.title || '')}" />
           </div>
 
           <div class="form-group">
             <label class="form-label">Инструкции (необязательно)</label>
-            <textarea id="cwInstructionsInput" class="form-control" rows="6" placeholder="Опишите требования, шаги выполнения и критерии сдачи...">${initialData.description || ''}</textarea>
+            <textarea id="cwInstructionsInput" class="form-control" rows="6" placeholder="Опишите требования, шаги выполнения и критерии сдачи...">${escapeHtml(initialData.description || '')}</textarea>
           </div>
 
           <!-- Attachments List with Modes (VIEW / EDIT / STUDENT_COPY) -->
@@ -367,7 +367,7 @@ export function renderCourseWorkDialog(courseId, initialData = {}, options = {})
               <label class="form-label">Тема</label>
               <select id="cwTopicSelect" class="form-control">
                 <option value="">Без темы</option>
-                ${topics.map(t => `<option value="${t.id}">${t.name}</option>`).join("")}
+                ${topics.map(t => `<option value="${escapeHtml(String(t.id))}">${escapeHtml(t.name || "")}</option>`).join("")}
               </select>
             </div>
 
@@ -375,7 +375,7 @@ export function renderCourseWorkDialog(courseId, initialData = {}, options = {})
               <label class="form-label">Категория оценки</label>
               <select id="cwGradeCategorySelect" class="form-control">
                 <option value="">Без категории</option>
-                ${gradeCategories.map(c => `<option value="${c.id}">${c.name || c.title} (${c.weight || 100}%)</option>`).join("")}
+                ${gradeCategories.map(c => `<option value="${escapeHtml(String(c.id))}">${escapeHtml(c.name || c.title || "")} (${escapeHtml(String(c.weight || 100))}%)</option>`).join("")}
               </select>
             </div>
 
@@ -383,7 +383,7 @@ export function renderCourseWorkDialog(courseId, initialData = {}, options = {})
               <label class="form-label">Учебный период</label>
               <select id="cwGradingPeriodSelect" class="form-control">
                 <option value="">Текущий период</option>
-                ${gradingPeriods.map(p => `<option value="${p.id}">${p.title || p.name}</option>`).join("")}
+                ${gradingPeriods.map(p => `<option value="${escapeHtml(String(p.id))}">${escapeHtml(p.title || p.name || "")}</option>`).join("")}
               </select>
             </div>
 
@@ -406,7 +406,7 @@ export function renderCourseWorkDialog(courseId, initialData = {}, options = {})
             <div class="form-group">
               <label class="form-label">Образовательные стандарты (ФГОС / CASE)</label>
               <select id="cwStandardsSelect" class="form-control" multiple size="3">
-                ${standardsList.map(s => `<option value="${s.id}">[${s.code || s.standard_code}] ${s.description || s.title}</option>`).join("")}
+                ${standardsList.map(s => `<option value="${escapeHtml(String(s.id))}">[${escapeHtml(s.code || s.standard_code || "")}] ${escapeHtml(s.description || s.title || "")}</option>`).join("")}
               </select>
             </div>
           </div>
@@ -431,7 +431,7 @@ export function renderCourseWorkDialog(courseId, initialData = {}, options = {})
   const renderAttachmentsList = () => {
     attachContainer.innerHTML = attachments.map((att, idx) => `
       <div class="dialog-att-item">
-        <span class="att-title">📎 ${att.title || "Вложение"}</span>
+        <span class="att-title">📎 ${escapeHtml(att.title || "Вложение")}</span>
         <div class="att-mode-selector">
           <select class="form-select-sm att-mode-select" data-index="${idx}">
             <option value="VIEW" ${att.shareMode === "VIEW" ? "selected" : ""}>Учащиеся могут просматривать</option>
@@ -649,7 +649,7 @@ export function openRubricBuilderModal(onSave) {
     container.innerHTML = criteria.map((crit, cIdx) => `
       <div class="rubric-criterion-box">
         <div class="criterion-header">
-          <input type="text" class="form-control crit-title-input" value="${crit.title}" placeholder="Название критерия" data-idx="${cIdx}" />
+          <input type="text" class="form-control crit-title-input" value="${escapeHtml(crit.title || '')}" placeholder="Название критерия" data-idx="${cIdx}" />
           <button type="button" class="btn-crit-del" data-idx="${cIdx}">&times;</button>
         </div>
         <div class="criterion-levels-grid">
@@ -659,8 +659,8 @@ export function openRubricBuilderModal(onSave) {
                 <input type="number" class="lvl-points-input" value="${lvl.points}" data-c="${cIdx}" data-l="${lIdx}" />
                 <span class="lvl-points-label">баллов</span>
               </div>
-              <input type="text" class="lvl-title-input" value="${lvl.title}" placeholder="Уровень" data-c="${cIdx}" data-l="${lIdx}" />
-              <textarea class="lvl-desc-input" placeholder="Описание требований..." data-c="${cIdx}" data-l="${lIdx}">${lvl.description}</textarea>
+              <input type="text" class="lvl-title-input" value="${escapeHtml(lvl.title || '')}" placeholder="Уровень" data-c="${cIdx}" data-l="${lIdx}" />
+              <textarea class="lvl-desc-input" placeholder="Описание требований..." data-c="${cIdx}" data-l="${lIdx}">${escapeHtml(lvl.description || '')}</textarea>
             </div>
           `).join("")}
         </div>
@@ -794,7 +794,7 @@ function initQuizPlayer(quiz, modalEl) {
         <span class="q-number">Вопрос ${idx + 1}</span>
         <span class="q-points">${q.points || 1} б.</span>
       </div>
-      <div class="q-prompt">${q.prompt || ""}</div>
+      <div class="q-prompt">${escapeHtml(q.prompt || "")}</div>
       <div class="q-answers-area">
         ${renderQuestionAnswerInput(q, idx)}
       </div>
