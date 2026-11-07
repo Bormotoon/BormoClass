@@ -42,14 +42,20 @@
         })
       });
       const data = await res.json();
-      if (res.ok && state.user && data.recess_seconds !== undefined) {
+      if (!res.ok) {
+        const errDetail = typeof data.detail === "string" ? data.detail : (data.message || "Ошибка решения задания");
+        data.error = errDetail;
+        data.message = errDetail;
+        return data;
+      }
+      if (state.user && data.recess_seconds !== undefined) {
         state.user.recess_seconds = data.recess_seconds;
         notifyListeners();
       }
       return data;
     } catch (err) {
       console.error("Passport bridge: solveTask error", err);
-      return { ok: false, error: err.message };
+      return { ok: false, error: err.message, message: err.message };
     }
   }
 
@@ -61,13 +67,19 @@
         body: JSON.stringify({ seconds })
       });
       const data = await res.json();
-      if (res.ok && state.user && data.remaining_seconds !== undefined) {
+      if (!res.ok) {
+        const errDetail = typeof data.detail === "string" ? data.detail : (data.message || "Ошибка списания секунд");
+        data.error = errDetail;
+        data.message = errDetail;
+        return data;
+      }
+      if (state.user && data.remaining_seconds !== undefined) {
         state.user.recess_seconds = data.remaining_seconds;
         notifyListeners();
       }
       return data;
     } catch (err) {
-      return { ok: false, error: err.message };
+      return { ok: false, error: err.message, message: err.message };
     }
   }
 

@@ -7,6 +7,103 @@
 import { ICONS, getIcon } from "./icons.js";
 import { TeacherZeroKnowledgeVault } from "./webcrypto-vault.js";
 
+/**
+ * Universal Toast Notification System
+ */
+export function showToast(message, type = "info") {
+  let toastContainer = document.getElementById("toastContainer");
+  if (!toastContainer) {
+    toastContainer = document.createElement("div");
+    toastContainer.id = "toastContainer";
+    toastContainer.style.cssText = `
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 420px;
+      pointer-events: none;
+    `;
+    document.body.appendChild(toastContainer);
+  }
+
+  const toast = document.createElement("div");
+  const bg = type === "error" ? "#ba1a1a" : type === "success" ? "#198754" : "#1f1f1f";
+  toast.style.cssText = `
+    background: ${bg};
+    color: #ffffff;
+    padding: 12px 18px;
+    border-radius: 10px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    font-size: 0.95rem;
+    line-height: 1.4;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  `;
+  const icon = type === "error" ? "⚠️" : type === "success" ? "✅" : "ℹ️";
+  toast.innerHTML = `<span style="font-size: 1.2rem;">${icon}</span><span style="flex: 1; word-break: break-word;">${message}</span>`;
+  toastContainer.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transition = "opacity 0.3s ease";
+    setTimeout(() => toast.remove(), 300);
+  }, 4500);
+}
+
+/**
+ * Parses API error response and extracts a human-friendly Russian message.
+ * Strictly prevents "[object Object]" leaks.
+ */
+export async function getErrorMessage(res, defaultMsg = "Произошла ошибка") {
+  if (!res) return defaultMsg;
+  try {
+    const data = await res.json();
+    if (typeof data === "string" && data.trim()) {
+      return data;
+    }
+    if (typeof data.detail === "string" && data.detail.trim()) {
+      return data.detail;
+    }
+    if (Array.isArray(data.detail)) {
+      return data.detail
+        .map((item) => {
+          if (typeof item === "string") return item;
+          if (item && item.msg) {
+            const field = Array.isArray(item.loc) ? item.loc[item.loc.length - 1] : "";
+            if (field === "join_pin") return "Пин-код класса должен содержать от 4 до 10 символов (например, 42819).";
+            if (field === "seat_number") return "Выберите парту от 1 до 40.";
+            if (field === "password") return "Пароль должен содержать от 4 символов.";
+            return (field ? `Поле «${field}»: ` : "") + item.msg;
+          }
+          return typeof item === "object" ? (item.msg || JSON.stringify(item)) : String(item);
+        })
+        .join("\n");
+    }
+    if (data.message && typeof data.message === "string") {
+      return data.message;
+    }
+    if (data.detail && typeof data.detail === "object") {
+      return data.detail.msg || JSON.stringify(data.detail);
+    }
+  } catch (e) {
+    // Non-JSON or network body
+  }
+
+  if (res.status === 401) return "Требуется авторизация. Пожалуйста, войдите в систему.";
+  if (res.status === 403) return "Доступ запрещен. Недостаточно прав для выполнения этого действия.";
+  if (res.status === 404) return "Запрашиваемые данные или класс не найдены.";
+  if (res.status === 409) return "Выбранное место или ресурс уже заняты.";
+  if (res.status === 422) return "Некорректный формат данных. Проверьте правильность заполнения полей.";
+  if (res.status >= 500) return "Внутренняя ошибка сервера. Пожалуйста, попробуйте позже.";
+
+  return defaultMsg;
+}
+
 class BormoClassApp {
   constructor() {
     this.user = null;
@@ -161,6 +258,7 @@ class BormoClassApp {
             <h3>${type === "login" ? "Вход в Паспорт" : "Регистрация паспорта (Zero-PII)"}</h3>
             <button class="btn btn-secondary" id="closeAuthModal">${getIcon("close")}</button>
           </div>
+          <div id="authModalError" style="display: none; color: #b3261e; background: #f9dedc; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500; line-height: 1.4; border-left: 4px solid #b3261e; margin-bottom: 0.75rem;"></div>
           ${
             type === "login"
               ? `
@@ -173,7 +271,10 @@ class BormoClassApp {
                 <label style="font-size: 0.85rem; font-weight: 600;">Пароль</label>
                 <input type="password" id="authPassword" required class="btn-secondary" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant);">
               </div>
-              <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Войти</button>
+              <div style="display: flex; justify-content: flex-end;">
+                <button type="button" id="forgotPwBtn" style="background: none; border: none; color: var(--md-sys-color-primary); font-size: 0.85rem; cursor: pointer; text-decoration: underline;">Забыли пароль?</button>
+              </div>
+              <button type="submit" class="btn btn-primary" style="margin-top: 0.25rem;">Войти</button>
             </form>
           `
               : `
@@ -189,7 +290,7 @@ class BormoClassApp {
                 </select>
               </div>
               <div>
-                <label style="font-size: 0.85rem; font-weight: 600;">Придумайте пароль</label>
+                <label style="font-size: 0.85rem; font-weight: 600;">Придумайте пароль (от 4 символов)</label>
                 <input type="password" id="authPassword" required minlength="4" class="btn-secondary" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant);">
               </div>
               <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Создать паспорт</button>
@@ -201,38 +302,139 @@ class BormoClassApp {
     `;
 
     document.getElementById("closeAuthModal").onclick = () => (modal.innerHTML = "");
+
+    if (document.getElementById("forgotPwBtn")) {
+      document.getElementById("forgotPwBtn").onclick = () => this.showRecoverModal();
+    }
+
+    const showError = (msg) => {
+      const errBox = document.getElementById("authModalError");
+      if (errBox) {
+        errBox.textContent = msg;
+        errBox.style.display = "block";
+      } else {
+        showToast(msg, "error");
+      }
+    };
+    const clearError = () => {
+      const errBox = document.getElementById("authModalError");
+      if (errBox) errBox.style.display = "none";
+    };
+
+    const handleInput = document.getElementById("authHandle");
+    if (handleInput) handleInput.oninput = clearError;
+    const pwInput = document.getElementById("authPassword");
+    if (pwInput) pwInput.oninput = clearError;
+
     document.getElementById("authForm").onsubmit = async (e) => {
       e.preventDefault();
+      clearError();
       if (type === "login") {
         const handle = document.getElementById("authHandle").value.trim();
         const password = document.getElementById("authPassword").value;
-        const res = await fetch("/api/passport/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ handle, password }),
-        });
-        if (res.ok) {
-          modal.innerHTML = "";
-          await window.pbPassport.refreshSession();
-        } else {
-          const err = await res.json();
-          alert(err.detail || "Ошибка входа");
+        try {
+          const res = await fetch("/api/passport/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ handle, password }),
+          });
+          if (res.ok) {
+            modal.innerHTML = "";
+            showToast("Успешный вход в систему!", "success");
+            await window.pbPassport.refreshSession();
+          } else {
+            const errMsg = await getErrorMessage(res, "Ошибка входа");
+            showError(errMsg);
+          }
+        } catch (err) {
+          showError("Ошибка сетевого соединения с сервером.");
         }
       } else {
         const role = document.getElementById("authRole").value;
         const password = document.getElementById("authPassword").value;
-        const res = await fetch("/api/passport/register", {
+        try {
+          const res = await fetch("/api/passport/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ role, password }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            this.showRegistrationSuccessModal(data);
+          } else {
+            const errMsg = await getErrorMessage(res, "Ошибка регистрации");
+            showError(errMsg);
+          }
+        } catch (err) {
+          showError("Ошибка сетевого соединения с сервером.");
+        }
+      }
+    };
+  }
+
+  showRecoverModal() {
+    const modal = document.getElementById("modalContainer");
+    modal.innerHTML = `
+      <div class="modal-overlay">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h3>Восстановление доступа</h3>
+            <button class="btn btn-secondary" id="closeRecoverModal">${getIcon("close")}</button>
+          </div>
+          <form id="recoverForm" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div id="recoverModalError" style="display: none; color: #b3261e; background: #f9dedc; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500; line-height: 1.4; border-left: 4px solid #b3261e;"></div>
+            <div>
+              <label style="font-size: 0.85rem; font-weight: 600;">Ваш позывной</label>
+              <input type="text" id="recHandle" required placeholder="Например: Бодрый-Енот-428" class="btn-secondary" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant);">
+            </div>
+            <div>
+              <label style="font-size: 0.85rem; font-weight: 600;">4 секретных слова восстановления (через пробел)</label>
+              <input type="text" id="recWords" required placeholder="слово1 слово2 слово3 слово4" class="btn-secondary" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant);">
+            </div>
+            <div>
+              <label style="font-size: 0.85rem; font-weight: 600;">Новый пароль (от 4 символов)</label>
+              <input type="password" id="recNewPassword" required minlength="4" class="btn-secondary" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant);">
+            </div>
+            <button type="submit" class="btn btn-primary">Сменить пароль</button>
+          </form>
+        </div>
+      </div>
+    `;
+    document.getElementById("closeRecoverModal").onclick = () => (modal.innerHTML = "");
+
+    const errBox = document.getElementById("recoverModalError");
+    document.getElementById("recoverForm").onsubmit = async (e) => {
+      e.preventDefault();
+      errBox.style.display = "none";
+      const handle = document.getElementById("recHandle").value.trim();
+      const wordsStr = document.getElementById("recWords").value.trim();
+      const new_password = document.getElementById("recNewPassword").value;
+      const recovery_words = wordsStr.split(/\s+/).filter(Boolean);
+
+      if (recovery_words.length !== 4) {
+        errBox.textContent = "Необходимо ввести ровно 4 слова восстановления через пробел.";
+        errBox.style.display = "block";
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/passport/recover", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ role, password }),
+          body: JSON.stringify({ handle, recovery_words, new_password }),
         });
         if (res.ok) {
-          const data = await res.json();
-          this.showRegistrationSuccessModal(data);
+          modal.innerHTML = "";
+          showToast("Пароль успешно обновлён! Войдите с новым паролем.", "success");
+          this.showAuthModal("login");
         } else {
-          const err = await res.json();
-          alert(err.detail || "Ошибка регистрации");
+          const errMsg = await getErrorMessage(res, "Не удалось восстановить доступ");
+          errBox.textContent = errMsg;
+          errBox.style.display = "block";
         }
+      } catch (err) {
+        errBox.textContent = "Ошибка сетевого соединения с сервером.";
+        errBox.style.display = "block";
       }
     };
   }
@@ -377,9 +579,10 @@ class BormoClassApp {
             <button class="btn btn-secondary" id="closeClassModal">${getIcon("close")}</button>
           </div>
           <form id="createClassForm" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div id="createClassModalError" style="display: none; color: #b3261e; background: #f9dedc; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500; line-height: 1.4; border-left: 4px solid #b3261e;"></div>
             <div>
               <label style="font-size: 0.85rem; font-weight: 600;">Название класса (например, 8А — Информатика)</label>
-              <input type="text" id="clsTitle" required class="btn-secondary" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant);">
+              <input type="text" id="clsTitle" required minlength="2" maxlength="100" class="btn-secondary" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant);">
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
               <div>
@@ -402,24 +605,36 @@ class BormoClassApp {
     `;
 
     document.getElementById("closeClassModal").onclick = () => (modal.innerHTML = "");
+    const errBox = document.getElementById("createClassModalError");
+    document.getElementById("clsTitle").oninput = () => (errBox.style.display = "none");
+
     document.getElementById("createClassForm").onsubmit = async (e) => {
       e.preventDefault();
-      const res = await fetch("/api/classroom/classes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: document.getElementById("clsTitle").value.trim(),
-          grade_level: Number(document.getElementById("clsGrade").value),
-          subject_code: document.getElementById("clsSubject").value.trim(),
-          quarter_goal: document.getElementById("clsGoal").value.trim(),
-        }),
-      });
-      if (res.ok) {
-        modal.innerHTML = "";
-        const data = await res.json();
-        window.location.hash = `#class/${data.id}/stream`;
-      } else {
-        alert("Ошибка создания класса");
+      errBox.style.display = "none";
+      try {
+        const res = await fetch("/api/classroom/classes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: document.getElementById("clsTitle").value.trim(),
+            grade_level: Number(document.getElementById("clsGrade").value),
+            subject_code: document.getElementById("clsSubject").value.trim(),
+            quarter_goal: document.getElementById("clsGoal").value.trim(),
+          }),
+        });
+        if (res.ok) {
+          modal.innerHTML = "";
+          const data = await res.json();
+          showToast("Класс успешно создан!", "success");
+          window.location.hash = `#class/${data.id}/stream`;
+        } else {
+          const errMsg = await getErrorMessage(res, "Ошибка создания класса");
+          errBox.textContent = errMsg;
+          errBox.style.display = "block";
+        }
+      } catch (err) {
+        errBox.textContent = "Ошибка сетевого соединения с сервером.";
+        errBox.style.display = "block";
       }
     };
   }
@@ -443,16 +658,17 @@ class BormoClassApp {
             <button class="btn btn-secondary" id="closeJoinModal">${getIcon("close")}</button>
           </div>
           <form id="joinClassForm" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div id="joinModalError" style="display: none; color: #b3261e; background: #f9dedc; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500; line-height: 1.4; border-left: 4px solid #b3261e;"></div>
             <div>
-              <label style="font-size: 0.85rem; font-weight: 600;">5-значный пин-код с доски</label>
-              <input type="text" id="joinPin" required maxlength="10" placeholder="Например: 42819" class="btn-secondary" style="width: 100%; padding: 0.75rem; font-family: var(--font-mono); font-size: 1.25rem; letter-spacing: 0.1em; text-align: center; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant);">
+              <label style="font-size: 0.85rem; font-weight: 600;">5-значный пин-код с интерактивной доски</label>
+              <input type="text" id="joinPin" required minlength="4" maxlength="10" placeholder="Например: 42819" autocomplete="off" class="btn-secondary" style="width: 100%; padding: 0.75rem; font-family: var(--font-mono); font-size: 1.25rem; letter-spacing: 0.1em; text-align: center; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant);">
             </div>
             <div>
               <label style="font-size: 0.85rem; font-weight: 600;">Выберите номер вашей парты (1..40):</label>
               ${seatsGridHtml}
               <div id="seatChosenDisplay" style="margin-top: 0.5rem; font-weight: 700; color: var(--md-sys-color-primary);">Парта не выбрана</div>
             </div>
-            <button type="submit" class="btn btn-primary" id="submitJoinBtn" disabled>Занять парту и войти</button>
+            <button type="submit" class="btn btn-primary" id="submitJoinBtn">Занять парту и войти</button>
           </form>
         </div>
       </div>
@@ -460,37 +676,71 @@ class BormoClassApp {
 
     document.getElementById("closeJoinModal").onclick = () => (modal.innerHTML = "");
 
+    const showError = (msg) => {
+      const errBox = document.getElementById("joinModalError");
+      if (errBox) {
+        errBox.textContent = msg;
+        errBox.style.display = "block";
+      } else {
+        showToast(msg, "error");
+      }
+    };
+    const clearError = () => {
+      const errBox = document.getElementById("joinModalError");
+      if (errBox) errBox.style.display = "none";
+    };
+
+    document.getElementById("joinPin").oninput = clearError;
+
     document.querySelectorAll(".seat-pick-btn").forEach((btn) => {
       btn.onclick = () => {
+        clearError();
         document.querySelectorAll(".seat-pick-btn").forEach((b) => b.classList.remove("btn-primary"));
         btn.classList.add("btn-primary");
         selectedSeat = Number(btn.dataset.seat);
         document.getElementById("seatChosenDisplay").textContent = `Выбрана парта: №${selectedSeat}`;
-        document.getElementById("submitJoinBtn").disabled = false;
       };
     });
 
     document.getElementById("joinClassForm").onsubmit = async (e) => {
       e.preventDefault();
-      if (!selectedSeat) return;
+      clearError();
       const joinPin = document.getElementById("joinPin").value.trim();
 
-      const res = await fetch("/api/classroom/classes/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          join_pin: joinPin,
-          seat_number: selectedSeat,
-        }),
-      });
+      if (!joinPin) {
+        showError("Пожалуйста, введите пин-код класса с интерактивной доски учителя.");
+        return;
+      }
+      if (joinPin.length < 4) {
+        showError("Пин-код должен содержать от 4 до 10 символов (например, 5 цифр: 42819).");
+        return;
+      }
+      if (!selectedSeat) {
+        showError("Пожалуйста, выберите номер вашей парты на схеме выше (от 1 до 40).");
+        return;
+      }
 
-      if (res.ok) {
-        modal.innerHTML = "";
-        const data = await res.json();
-        window.location.hash = `#class/${data.class_id}/stream`;
-      } else {
-        const err = await res.json();
-        alert(err.detail || "Не удалось войти в класс");
+      try {
+        const res = await fetch("/api/classroom/classes/join", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            join_pin: joinPin,
+            seat_number: selectedSeat,
+          }),
+        });
+
+        if (res.ok) {
+          modal.innerHTML = "";
+          const data = await res.json();
+          showToast("Вы успешно подключились к классу!", "success");
+          window.location.hash = `#class/${data.class_id}/stream`;
+        } else {
+          const errMsg = await getErrorMessage(res, "Не удалось войти в класс");
+          showError(errMsg);
+        }
+      } catch (err) {
+        showError("Ошибка сетевого соединения с сервером. Попробуйте снова.");
       }
     };
   }
@@ -505,7 +755,15 @@ class BormoClassApp {
 
     const res = await fetch(`/api/classroom/classes/${classId}`);
     if (!res.ok) {
-      main.innerHTML = `<p>Класс не найден или нет доступа</p>`;
+      const errMsg = await getErrorMessage(res, "Класс не найден или нет доступа");
+      main.innerHTML = `
+        <div style="text-align: center; padding: 4rem 1rem; max-width: 500px; margin: 0 auto;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+          <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Не удалось открыть класс</h2>
+          <p style="color: var(--md-sys-color-on-surface-variant); margin-bottom: 1.5rem; line-height: 1.5;">${errMsg}</p>
+          <button class="btn btn-primary" onclick="window.location.hash='#classes'">Вернуться к списку классов</button>
+        </div>
+      `;
       return;
     }
     const cls = await res.json();
@@ -623,12 +881,21 @@ class BormoClassApp {
     if (!isTeacher) {
       document.querySelectorAll("[data-tl]").forEach((btn) => {
         btn.onclick = async () => {
-          await fetch(`/api/classroom/classes/${cls.id}/traffic-light`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ traffic_light: btn.dataset.tl }),
-          });
-          alert("Статус отправлен на интерактивную доску!");
+          try {
+            const res = await fetch(`/api/classroom/classes/${cls.id}/traffic-light`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ traffic_light: btn.dataset.tl }),
+            });
+            if (res.ok) {
+              showToast("Статус отправлен на интерактивную доску!", "success");
+            } else {
+              const errMsg = await getErrorMessage(res, "Не удалось обновить статус");
+              showToast(errMsg, "error");
+            }
+          } catch (e) {
+            showToast("Ошибка сети при отправке статуса.", "error");
+          }
         };
       });
     }
@@ -636,20 +903,31 @@ class BormoClassApp {
     if (document.getElementById("publishStreamBtn")) {
       document.getElementById("publishStreamBtn").onclick = async () => {
         const text = document.getElementById("streamPostText").value.trim();
-        if (!text) return;
-        const res = await fetch(`/api/classroom/classes/${cls.id}/coursework`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: text.slice(0, 50),
-            instructions: text,
-            kind: "announcement",
-            is_homework: 0,
-          }),
-        });
-        if (res.ok) {
-          document.getElementById("streamPostText").value = "";
-          this.loadStreamFeed(cls.id);
+        if (!text) {
+          showToast("Введите текст сообщения для публикации.", "error");
+          return;
+        }
+        try {
+          const res = await fetch(`/api/classroom/classes/${cls.id}/coursework`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: text.slice(0, 50),
+              instructions: text,
+              kind: "announcement",
+              is_homework: 0,
+            }),
+          });
+          if (res.ok) {
+            document.getElementById("streamPostText").value = "";
+            showToast("Объявление успешно опубликовано в ленту!", "success");
+            this.loadStreamFeed(cls.id);
+          } else {
+            const errMsg = await getErrorMessage(res, "Не удалось опубликовать объявление");
+            showToast(errMsg, "error");
+          }
+        } catch (e) {
+          showToast("Ошибка сети при публикации объявления.", "error");
         }
       };
     }
@@ -755,9 +1033,10 @@ class BormoClassApp {
             <button class="btn btn-secondary" id="closeCwModal">${getIcon("close")}</button>
           </div>
           <form id="createCwForm" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div id="createCwModalError" style="display: none; color: #b3261e; background: #f9dedc; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500; line-height: 1.4; border-left: 4px solid #b3261e;"></div>
             <div>
               <label style="font-size: 0.85rem; font-weight: 600;">Название задания</label>
-              <input type="text" id="cwTitle" required class="btn-secondary" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant);">
+              <input type="text" id="cwTitle" required minlength="2" maxlength="150" class="btn-secondary" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant);">
             </div>
             <div>
               <label style="font-size: 0.85rem; font-weight: 600;">Инструкции к заданию</label>
@@ -793,28 +1072,39 @@ class BormoClassApp {
     `;
 
     document.getElementById("closeCwModal").onclick = () => (modal.innerHTML = "");
+    const errBox = document.getElementById("createCwModalError");
+    document.getElementById("cwTitle").oninput = () => (errBox.style.display = "none");
+
     document.getElementById("createCwForm").onsubmit = async (e) => {
       e.preventDefault();
+      errBox.style.display = "none";
       const isHw = cls.grade_level === 1 ? 0 : document.getElementById("cwIsHomework")?.checked ? 1 : 0;
-      const res = await fetch(`/api/classroom/classes/${cls.id}/coursework`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: document.getElementById("cwTitle").value.trim(),
-          instructions: document.getElementById("cwInstructions").value.trim(),
-          max_points: Number(document.getElementById("cwPoints").value),
-          recess_reward: Number(document.getElementById("cwRecess").value),
-          is_homework: isHw,
-          kind: "assignment",
-          state: "published",
-        }),
-      });
-      if (res.ok) {
-        modal.innerHTML = "";
-        this.renderClassworkTab(cls);
-      } else {
-        const err = await res.json();
-        alert(err.detail || "Ошибка публикации задания");
+      try {
+        const res = await fetch(`/api/classroom/classes/${cls.id}/coursework`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: document.getElementById("cwTitle").value.trim(),
+            instructions: document.getElementById("cwInstructions").value.trim(),
+            max_points: Number(document.getElementById("cwPoints").value),
+            recess_reward: Number(document.getElementById("cwRecess").value),
+            is_homework: isHw,
+            kind: "assignment",
+            state: "published",
+          }),
+        });
+        if (res.ok) {
+          modal.innerHTML = "";
+          showToast("Задание успешно создано и опубликовано!", "success");
+          this.renderClassworkTab(cls);
+        } else {
+          const errMsg = await getErrorMessage(res, "Ошибка публикации задания");
+          errBox.textContent = errMsg;
+          errBox.style.display = "block";
+        }
+      } catch (err) {
+        errBox.textContent = "Ошибка сетевого соединения с сервером.";
+        errBox.style.display = "block";
       }
     };
   }
@@ -829,9 +1119,10 @@ class BormoClassApp {
             <button class="btn btn-secondary" id="closeTurnInModal">${getIcon("close")}</button>
           </div>
           <form id="turnInForm" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div id="turnInModalError" style="display: none; color: #b3261e; background: #f9dedc; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500; line-height: 1.4; border-left: 4px solid #b3261e;"></div>
             <div>
               <label style="font-size: 0.85rem; font-weight: 600;">Ваш ответ или решение</label>
-              <textarea id="studentAnswer" required class="btn-secondary" style="width: 100%; min-height: 120px; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant);"></textarea>
+              <textarea id="studentAnswer" required placeholder="Введите ваш ответ или решение..." class="btn-secondary" style="width: 100%; min-height: 120px; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant);"></textarea>
             </div>
             <button type="submit" class="btn btn-primary">Отправить на проверку</button>
           </form>
@@ -840,20 +1131,31 @@ class BormoClassApp {
     `;
 
     document.getElementById("closeTurnInModal").onclick = () => (modal.innerHTML = "");
+    const errBox = document.getElementById("turnInModalError");
+    document.getElementById("studentAnswer").oninput = () => (errBox.style.display = "none");
+
     document.getElementById("turnInForm").onsubmit = async (e) => {
       e.preventDefault();
+      errBox.style.display = "none";
       const ans = document.getElementById("studentAnswer").value.trim();
-      const res = await fetch(`/api/classroom/coursework/${courseworkId}/turn-in`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payload_json: JSON.stringify({ answer: ans }) }),
-      });
-      if (res.ok) {
-        modal.innerHTML = "";
-        alert("Работа успешно сдана!");
-        await window.pbPassport.refreshSession();
-      } else {
-        alert("Ошибка сдачи работы");
+      try {
+        const res = await fetch(`/api/classroom/coursework/${courseworkId}/turn-in`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ payload_json: JSON.stringify({ answer: ans }) }),
+        });
+        if (res.ok) {
+          modal.innerHTML = "";
+          showToast("Работа успешно сдана на проверку учителю!", "success");
+          await window.pbPassport.refreshSession();
+        } else {
+          const errMsg = await getErrorMessage(res, "Ошибка сдачи работы");
+          errBox.textContent = errMsg;
+          errBox.style.display = "block";
+        }
+      } catch (err) {
+        errBox.textContent = "Ошибка сетевого соединения с сервером.";
+        errBox.style.display = "block";
       }
     };
   }
@@ -1010,35 +1312,50 @@ class BormoClassApp {
 
       if (name && this.vault) {
         if (!this.vault.hasKey()) {
-          alert("Сначала задайте ключ учителя в меню «Ключ шифрования»!");
+          showToast("Сначала задайте ключ учителя в меню «Ключ шифрования»!", "error");
           return;
         }
         encryptedNote = await this.vault.encryptStudentName(name);
       }
 
-      const res = await fetch(`/api/classroom/classes/${classId}/members/${member.student_id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          encrypted_note: encryptedNote,
-          is_present: isPresent,
-        }),
-      });
+      try {
+        const res = await fetch(`/api/classroom/classes/${classId}/members/${member.student_id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            encrypted_note: encryptedNote,
+            is_present: isPresent,
+          }),
+        });
 
-      if (res.ok) {
-        modal.innerHTML = "";
-        this.renderPeopleTab({ id: classId, is_teacher: true });
+        if (res.ok) {
+          modal.innerHTML = "";
+          showToast("Данные ученика успешно сохранены!", "success");
+          this.renderPeopleTab({ id: classId, is_teacher: true });
+        } else {
+          const errMsg = await getErrorMessage(res, "Не удалось обновить данные ученика");
+          showToast(errMsg, "error");
+        }
+      } catch (e) {
+        showToast("Ошибка сети при сохранении данных.", "error");
       }
     };
 
     document.getElementById("resetPwBtn").onclick = async () => {
-      if (!confirm(`Сбросить пароль для ${member.handle}?`)) return;
-      const res = await fetch(`/api/classroom/classes/${classId}/members/${member.student_id}/reset-password`, {
-        method: "POST",
-      });
-      if (res.ok) {
-        const d = await res.json();
-        alert(`Новый временный пароль: ${d.temp_password}\nСлова: ${d.recovery_words.join(", ")}`);
+      if (!confirm(`Сбросить пароль для ученика ${member.handle}?`)) return;
+      try {
+        const res = await fetch(`/api/classroom/classes/${classId}/members/${member.student_id}/reset-password`, {
+          method: "POST",
+        });
+        if (res.ok) {
+          const d = await res.json();
+          alert(`Пароль успешно сброшен!\n\nНовый временный пароль: ${d.temp_password}\nСлова восстановления: ${d.recovery_words.join(", ")}`);
+        } else {
+          const errMsg = await getErrorMessage(res, "Не удалось сбросить пароль ученика");
+          showToast(errMsg, "error");
+        }
+      } catch (e) {
+        showToast("Ошибка сети при сбросе пароля.", "error");
       }
     };
   }
@@ -1205,17 +1522,27 @@ class BormoClassApp {
         const grade = Number(btn.dataset.g);
         const comment = document.getElementById("teacherCommentInput").value.trim();
 
-        await fetch(`/api/classroom/submissions/${courseworkId}/${studentId}/grade`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            grade_five: grade,
-            teacher_comment: comment,
-          }),
-        });
+        try {
+          const res = await fetch(`/api/classroom/submissions/${courseworkId}/${studentId}/grade`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              grade_five: grade,
+              teacher_comment: comment,
+            }),
+          });
 
-        modal.innerHTML = "";
-        this.renderGradesTab({ id: classId, is_teacher: true });
+          if (res.ok) {
+            modal.innerHTML = "";
+            showToast("Оценка успешно выставлена!", "success");
+            this.renderGradesTab({ id: classId, is_teacher: true });
+          } else {
+            const errMsg = await getErrorMessage(res, "Не удалось выставить оценку");
+            showToast(errMsg, "error");
+          }
+        } catch (e) {
+          showToast("Ошибка сети при выставлении оценки.", "error");
+        }
       };
     });
   }

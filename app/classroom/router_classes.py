@@ -186,7 +186,10 @@ def join_class(req: JoinClassRequest, request: Request):
         ).fetchone()
 
         if not class_row:
-            raise HTTPException(status_code=404, detail="Класс с таким пин-кодом не найден")
+            raise HTTPException(
+                status_code=404,
+                detail=f"Класс с кодом подключения «{req.join_pin.strip()}» не найден. Проверьте 5-значный пин-код на интерактивной доске учителя."
+            )
 
         class_id = class_row["id"]
 
@@ -197,7 +200,10 @@ def join_class(req: JoinClassRequest, request: Request):
         ).fetchone()
 
         if seat_taken and seat_taken["student_id"] != student_id:
-            raise HTTPException(status_code=409, detail=f"Парта №{req.seat_number} уже занята другим учеником")
+            raise HTTPException(
+                status_code=409,
+                detail=f"Парта №{req.seat_number} уже занята другим учеником. Пожалуйста, выберите свободное место на схеме."
+            )
 
         # Добавляем или обновляем парту ученика
         conn.execute("""
