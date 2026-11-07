@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
@@ -170,6 +170,10 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 PORTRAITS_DIR = STATIC_DIR / "passport" / "portraits"
 if PORTRAITS_DIR.exists():
     app.mount("/passport/portraits", StaticFiles(directory=str(PORTRAITS_DIR)), name="passport_portraits")
+
+@app.api_route("/favicon.ico", methods=["GET", "HEAD"])
+def favicon():
+    return Response(status_code=204)
 
 @app.api_route("/pb-passport.js", methods=["GET", "HEAD"], response_class=FileResponse)
 def pb_passport_script():
