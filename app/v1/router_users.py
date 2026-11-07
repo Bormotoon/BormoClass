@@ -40,7 +40,7 @@ def get_user_profile(userId: str, request: Request):
         is_admin = (ctx.user.get("role") == "admin")
 
         if not is_self and not is_admin:
-            # Проверяем, есть ли общий курс или отношение опекун-ученик
+            # Проверяем, есть ли общий курс
             common = conn.execute(
                 """
                 SELECT 1 FROM class_members cm1
@@ -50,12 +50,9 @@ def get_user_profile(userId: str, request: Request):
                 SELECT 1 FROM classes c
                 JOIN class_members cm ON c.id = cm.class_id
                 WHERE (c.teacher_id = ? AND cm.student_id = ?) OR (c.teacher_id = ? AND cm.student_id = ?)
-                UNION
-                SELECT 1 FROM guardians g
-                WHERE (g.student_id = ? AND g.guardian_user_id = ?) OR (g.student_id = ? AND g.guardian_user_id = ?)
                 LIMIT 1
                 """,
-                (ctx.user["id"], target_uid, ctx.user["id"], target_uid, target_uid, ctx.user["id"], target_uid, ctx.user["id"], ctx.user["id"], target_uid)
+                (ctx.user["id"], target_uid, ctx.user["id"], target_uid, target_uid, ctx.user["id"])
             ).fetchone()
             if not common:
                 api_error(404, "NOT_FOUND", "Профиль пользователя не найден")

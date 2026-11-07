@@ -136,6 +136,16 @@ async def google_api_exception_handler(request: Request, exc: GoogleAPIException
         content={"detail": exc.error_message, "error": exc.error_payload}
     )
 
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; "
+        "frame-ancestors 'self'; base-uri 'self'; form-action 'self';"
+    )
+    return response
+
 # Подключение мидлвари Pedobraz-Passport
 app.add_middleware(PassportMiddleware)
 

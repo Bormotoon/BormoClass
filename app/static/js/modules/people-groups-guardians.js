@@ -17,11 +17,10 @@ export function renderPeopleTab(container, courseId, user = null, options = {}) 
 
   container.innerHTML = `
     <div class="people-tab-container">
-      <!-- Sub-tabs bar: Roster | Student Groups | Guardians -->
+      <!-- Sub-tabs bar: Roster | Student Groups -->
       <div class="people-subnav-bar">
         <button class="people-nav-pill active" id="pillRosterBtn">Участники курса</button>
         <button class="people-nav-pill" id="pillGroupsBtn">Учебные подгруппы</button>
-        ${isTeacher ? `<button class="people-nav-pill" id="pillGuardiansBtn">Опекуны (Zero-PII)</button>` : ""}
       </div>
 
       <!-- Pane 1: Main Roster (Teachers + Students + Desks Matrix) -->
@@ -34,24 +33,15 @@ export function renderPeopleTab(container, courseId, user = null, options = {}) 
       <div class="people-pane" id="paneGroups" style="display: none;">
         <div class="student-groups-wrapper" id="studentGroupsWrapper"></div>
       </div>
-
-      <!-- Pane 3: Guardians -->
-      ${isTeacher ? `
-        <div class="people-pane" id="paneGuardians" style="display: none;">
-          <div class="guardians-panel-wrapper" id="guardiansPanelWrapper"></div>
-        </div>
-      ` : ""}
     </div>
   `;
 
   // Subnav switching
   const pillRoster = document.getElementById("pillRosterBtn");
   const pillGroups = document.getElementById("pillGroupsBtn");
-  const pillGuardians = document.getElementById("pillGuardiansBtn");
 
   const paneRoster = document.getElementById("paneRoster");
   const paneGroups = document.getElementById("paneGroups");
-  const paneGuardians = document.getElementById("paneGuardians");
 
   const activatePane = (btn, pane) => {
     container.querySelectorAll(".people-nav-pill").forEach(p => p.classList.remove("active"));
@@ -68,12 +58,6 @@ export function renderPeopleTab(container, courseId, user = null, options = {}) 
   pillGroups?.addEventListener("click", () => {
     activatePane(pillGroups, paneGroups);
     renderStudentGroupsPanel(document.getElementById("studentGroupsWrapper"), courseId, user, options);
-  });
-  pillGuardians?.addEventListener("click", () => {
-    if (paneGuardians) {
-      activatePane(pillGuardians, paneGuardians);
-      renderGuardiansPanel(document.getElementById("guardiansPanelWrapper"), courseId, user, options);
-    }
   });
 
   // Initial load of Roster
@@ -713,45 +697,5 @@ export function openGuardianInviteModal(student = {}) {
     navigator.clipboard.writeText(text).then(() => {
       alert("Код и инструкция скопированы в буфер обмена!");
     });
-  });
-}
-
-/**
- * Guardians Panel renderer for Teacher
- */
-export function renderGuardiansPanel(container, courseId, user = null, options = {}) {
-  container.innerHTML = `
-    <div class="guardians-panel">
-      <div class="guardians-header">
-        <h3>Родители и опекуны класса</h3>
-      </div>
-      <p class="guardians-summary-note">
-        По закону 152-ФЗ РФ и стандарту Zero-PII персональные данные родителей не собираются. Связь осуществляется через криптографические токены доступа.
-      </p>
-      <div class="guardians-table-wrapper">
-        <table class="roster-table">
-          <thead>
-            <tr>
-              <th>Учащийся</th>
-              <th>Статус привязки опекуна</th>
-              <th style="text-align: right;">Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Бодрый-Енот-428</td>
-              <td><span class="badge" style="background:#d1e7dd; color:#0f5132;">Опекун привязан</span></td>
-              <td style="text-align: right;">
-                <button class="btn btn-sm btn-secondary view-summary-btn">Просмотр сводки</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-
-  container.querySelector(".view-summary-btn")?.addEventListener("click", () => {
-    alert("Родительская сводка: за последнюю неделю сдано 4 задания, средний балл 4.8, просрочек дедлайнов нет.");
   });
 }

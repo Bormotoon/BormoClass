@@ -8,31 +8,31 @@ from app.config import settings
 from app.passport.crypto_cookie import verify_cookie_token
 from app.v1.protocol import api_error
 
-# 24 OAuth 2.0 скоупа Google Classroom REST API v1
-SCOPE_COURSES = "https://www.googleapis.com/auth/classroom.courses"
-SCOPE_COURSES_READONLY = "https://www.googleapis.com/auth/classroom.courses.readonly"
-SCOPE_ROSTERS = "https://www.googleapis.com/auth/classroom.rosters"
-SCOPE_ROSTERS_READONLY = "https://www.googleapis.com/auth/classroom.rosters.readonly"
-SCOPE_PROFILE_EMAILS = "https://www.googleapis.com/auth/classroom.profile.emails"
-SCOPE_PROFILE_PHOTOS = "https://www.googleapis.com/auth/classroom.profile.photos"
-SCOPE_COURSEWORK_STUDENTS = "https://www.googleapis.com/auth/classroom.coursework.students"
-SCOPE_COURSEWORK_STUDENTS_READONLY = "https://www.googleapis.com/auth/classroom.coursework.students.readonly"
-SCOPE_COURSEWORK_ME = "https://www.googleapis.com/auth/classroom.coursework.me"
-SCOPE_COURSEWORK_ME_READONLY = "https://www.googleapis.com/auth/classroom.coursework.me.readonly"
-SCOPE_COURSEWORKMATERIALS = "https://www.googleapis.com/auth/classroom.courseworkmaterials"
-SCOPE_COURSEWORKMATERIALS_READONLY = "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly"
-SCOPE_ANNOUNCEMENTS = "https://www.googleapis.com/auth/classroom.announcements"
-SCOPE_ANNOUNCEMENTS_READONLY = "https://www.googleapis.com/auth/classroom.announcements.readonly"
-SCOPE_TOPICS = "https://www.googleapis.com/auth/classroom.topics"
-SCOPE_TOPICS_READONLY = "https://www.googleapis.com/auth/classroom.topics.readonly"
-SCOPE_GUARDIANLINKS_STUDENTS = "https://www.googleapis.com/auth/classroom.guardianlinks.students"
-SCOPE_GUARDIANLINKS_STUDENTS_READONLY = "https://www.googleapis.com/auth/classroom.guardianlinks.students.readonly"
-SCOPE_GUARDIANLINKS_ME_READONLY = "https://www.googleapis.com/auth/classroom.guardianlinks.me.readonly"
-SCOPE_PUSH_NOTIFICATIONS = "https://www.googleapis.com/auth/classroom.push-notifications"
-SCOPE_SUBMISSIONS_STUDENTS_READONLY = "https://www.googleapis.com/auth/classroom.student-submissions.students.readonly"
-SCOPE_SUBMISSIONS_ME_READONLY = "https://www.googleapis.com/auth/classroom.student-submissions.me.readonly"
-SCOPE_ADDONS_TEACHER = "https://www.googleapis.com/auth/classroom.addons.teacher"
-SCOPE_ADDONS_STUDENT = "https://www.googleapis.com/auth/classroom.addons.student"
+# Внутренние OAuth 2.0 скоупы BormoClass (100% автономность, Zero-Google)
+SCOPE_COURSES = "bormoclass:courses"
+SCOPE_COURSES_READONLY = "bormoclass:courses.readonly"
+SCOPE_ROSTERS = "bormoclass:rosters"
+SCOPE_ROSTERS_READONLY = "bormoclass:rosters.readonly"
+SCOPE_PROFILE_EMAILS = "bormoclass:profile.emails"
+SCOPE_PROFILE_PHOTOS = "bormoclass:profile.photos"
+SCOPE_COURSEWORK_STUDENTS = "bormoclass:coursework.students"
+SCOPE_COURSEWORK_STUDENTS_READONLY = "bormoclass:coursework.students.readonly"
+SCOPE_COURSEWORK_ME = "bormoclass:coursework.me"
+SCOPE_COURSEWORK_ME_READONLY = "bormoclass:coursework.me.readonly"
+SCOPE_COURSEWORKMATERIALS = "bormoclass:courseworkmaterials"
+SCOPE_COURSEWORKMATERIALS_READONLY = "bormoclass:courseworkmaterials.readonly"
+SCOPE_ANNOUNCEMENTS = "bormoclass:announcements"
+SCOPE_ANNOUNCEMENTS_READONLY = "bormoclass:announcements.readonly"
+SCOPE_TOPICS = "bormoclass:topics"
+SCOPE_TOPICS_READONLY = "bormoclass:topics.readonly"
+SCOPE_GUARDIANLINKS_STUDENTS = "bormoclass:guardianlinks.students"
+SCOPE_GUARDIANLINKS_STUDENTS_READONLY = "bormoclass:guardianlinks.students.readonly"
+SCOPE_GUARDIANLINKS_ME_READONLY = "bormoclass:guardianlinks.me.readonly"
+SCOPE_PUSH_NOTIFICATIONS = "bormoclass:push-notifications"
+SCOPE_SUBMISSIONS_STUDENTS_READONLY = "bormoclass:student-submissions.students.readonly"
+SCOPE_SUBMISSIONS_ME_READONLY = "bormoclass:student-submissions.me.readonly"
+SCOPE_ADDONS_TEACHER = "bormoclass:addons.teacher"
+SCOPE_ADDONS_STUDENT = "bormoclass:addons.student"
 
 ALL_24_SCOPES: Set[str] = {
     SCOPE_COURSES, SCOPE_COURSES_READONLY,
@@ -155,15 +155,6 @@ def get_course_role(conn, class_id: int, user: dict) -> Optional[str]:
     ).fetchone()
     if member:
         return "STUDENT"
-
-    guardian = conn.execute(
-        """SELECT 1 FROM guardians g
-           JOIN class_members cm ON g.student_id = cm.student_id
-           WHERE cm.class_id = ? AND g.guardian_user_id = ? AND cm.enrollment_active = 1""",
-        (class_id, user["id"])
-    ).fetchone()
-    if guardian:
-        return "GUARDIAN"
 
     return None
 

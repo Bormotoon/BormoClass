@@ -15,7 +15,6 @@ import * as PeopleGroups from "./modules/people-groups-guardians.js";
 import * as SpeedGrader from "./modules/speedgrader.js";
 import * as GradebookPeriods from "./modules/gradebook-periods.js";
 import * as GlobalCalendarAdmin from "./modules/global-calendar-admin.js";
-import * as PdfScanner from "./modules/pdf-scanner.js";
 
 if (typeof window !== "undefined") {
   window.BormoClassModules = {
@@ -27,7 +26,6 @@ if (typeof window !== "undefined") {
     SpeedGrader,
     GradebookPeriods,
     GlobalCalendarAdmin,
-    PdfScanner,
   };
 }
 

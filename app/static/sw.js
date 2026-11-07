@@ -21,7 +21,6 @@ const PRECACHE_ASSETS = [
   "/static/js/modules/speedgrader.js",
   "/static/js/modules/gradebook-periods.js",
   "/static/js/modules/global-calendar-admin.js",
-  "/static/js/modules/pdf-scanner.js",
   "/static/manifest.webmanifest"
 ];
 
