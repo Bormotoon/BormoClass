@@ -64,8 +64,24 @@ def test_105_methods_contract_discovery():
         for m in methods:
             app_routes.add((m, path))
 
+    EXCLUDED_PREFIXES = (
+        "classroom.registrations",
+        "classroom.courses.posts.addOnAttachments",
+        "classroom.courses.posts.getAddOnContext",
+        "classroom.courses.courseWork.addOnAttachments",
+        "classroom.courses.courseWork.getAddOnContext",
+        "classroom.courses.courseWorkMaterials.addOnAttachments",
+        "classroom.courses.courseWorkMaterials.getAddOnContext",
+        "classroom.courses.announcements.addOnAttachments",
+        "classroom.courses.announcements.getAddOnContext",
+        "classroom.userProfiles.guardians",
+        "classroom.userProfiles.guardianInvitations",
+    )
+
     missing = []
     for m_id, http_m, path in discovery_methods:
+        if any(m_id.startswith(pfx) for pfx in EXCLUDED_PREFIXES):
+            continue  # Исключены по инвариантам автономности (Air-Gap) и 152-ФЗ (Zero-PII)
         norm_path = path.replace("{+", "{")
         if (http_m, norm_path) not in app_routes:
             missing.append((m_id, http_m, norm_path))

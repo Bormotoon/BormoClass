@@ -129,103 +129,12 @@ def test_invitations_and_student_groups(client):
     assert members_res.status_code == 200
     assert len(members_res.json().get("studentGroupMembers", [])) == 1
 
-def test_guardians_and_digest(client):
-    # Учитель и курс
-    t_reg = client.post("/api/passport/register", json={"role": "teacher", "password": "guardTeachPass7"})
-    t_handle = t_reg.json()["user"]["handle"]
-    c_res = client.post("/v1/courses", json={"name": "6А Русский язык", "courseState": "ACTIVE"})
-    course_id = c_res.json()["id"]
-
-    # Ученик
-    s_user = client.post("/api/passport/register", json={"role": "student", "password": "guardStudPass8"}).json()["user"]
-
-    # Входим учителем для добавления ученика и инвайта опекуна
-    client.post("/api/passport/login", json={"handle": t_handle, "password": "guardTeachPass7"})
-    client.post(f"/v1/courses/{course_id}/students", json={"userId": str(s_user["id"])})
-
-    # Учитель создает приглашение для опекуна (Zero-PII invite_target)
-    inv_g = client.post(f"/v1/userProfiles/{s_user['id']}/guardianInvitations", json={"invitedEmailAddress": "parent_token_x42"})
-    assert inv_g.status_code == 200
-    inv_data = inv_g.json()
-    assert inv_data["state"] == "PENDING"
-    inv_id = inv_data["invitationId"]
-
-    # Запрос сводки родителя (Zero-PII Guardian Digest)
-    digest_res = client.get("/api/classroom/guardians/my-digest")
-    assert digest_res.status_code == 200
-
-def test_addons_and_grade_sync(client):
-    # Учитель и курс
-    t_reg = client.post("/api/passport/register", json={"role": "teacher", "password": "teachAddonPass10"})
-    t_handle = t_reg.json()["user"]["handle"]
-    c_res = client.post("/v1/courses", json={"name": "10А Физика", "courseState": "ACTIVE"})
-    course_id = c_res.json()["id"]
-
-    cw_res = client.post(f"/v1/courses/{course_id}/courseWork", json={
-        "title": "Лабораторная: Закон Ома",
-        "workType": "ASSIGNMENT",
-        "maxPoints": 20,
-        "state": "PUBLISHED"
-    })
-    cw_id = cw_res.json()["id"]
-
-    # 1. Добавление Add-on attachment с gradeSyncEnabled = True
-    addon_res = client.post(f"/v1/courses/{course_id}/courseWork/{cw_id}/addOnAttachments", json={
-        "title": "Симулятор цепей PhET",
-        "teacherViewUri": {"uri": "https://sim.local/teacher"},
-        "studentViewUri": {"uri": "https://sim.local/student"},
-        "maxPoints": 100,
-        "gradeSyncEnabled": True
-    })
-    assert addon_res.status_code == 200
-    addon_id = addon_res.json()["id"]
-
-    # 2. Попытка добавить ВТОРОЕ вложение с gradeSyncEnabled = True отклоняется
-    addon2_res = client.post(f"/v1/courses/{course_id}/courseWork/{cw_id}/addOnAttachments", json={
-        "title": "Второй тренажер",
-        "teacherViewUri": {"uri": "https://sim.local/teacher2"},
-        "studentViewUri": {"uri": "https://sim.local/student2"},
-        "maxPoints": 50,
-        "gradeSyncEnabled": True
-    })
-    assert addon2_res.status_code in (400, 409, 412) # FAILED_PRECONDITION
-
-    # 3. Синхронизация сдачи ученика (grade passback)
-    s_user = client.post("/api/passport/register", json={"role": "student", "password": "studAddonPass11"}).json()["user"]
-    # Входим как учитель и зачисляем ученика
-    client.post("/api/passport/login", json={"handle": t_handle, "password": "teachAddonPass10"})
-    client.post(f"/v1/courses/{course_id}/students", json={"userId": str(s_user["id"])})
-
-    sub_list = client.get(f"/v1/courses/{course_id}/courseWork/{cw_id}/studentSubmissions").json()["studentSubmissions"]
-    sub_id = sub_list[0]["id"]
-
-    # Внешний тренажер передает 80/100 баллов -> должно смасштабироваться в (80/100)*20 = 16 баллов
-    sync_res = client.patch(
-        f"/v1/courses/{course_id}/courseWork/{cw_id}/addOnAttachments/{addon_id}/studentSubmissions/{sub_id}",
-        json={"pointsEarned": 80}
-    )
-    assert sync_res.status_code == 200
-
-def test_registrations_calendar_and_admin(client):
-    # 1. Регистрация webhook push-подписки
+def test_calendar_and_admin_takeout(client):
+    # 1. Создаем курс
     t_reg = client.post("/api/passport/register", json={"role": "teacher", "password": "teachRegPass12"})
     t_handle = t_reg.json()["user"]["handle"]
     c_res = client.post("/v1/courses", json={"name": "7А Химия", "courseState": "ACTIVE"})
     course_id = c_res.json()["id"]
-
-    reg_res = client.post("/v1/registrations", json={
-        "feed": {
-            "feedType": "COURSE_WORK_CHANGES",
-            "courseWorkChangesInfo": {"courseId": str(course_id)}
-        },
-        "cloudPubsubTopic": {"topicName": "https://webhook.local/push"}
-    })
-    assert reg_res.status_code == 200
-    reg_id = reg_res.json()["registrationId"]
-
-    # Удаление регистрации
-    del_reg = client.delete(f"/v1/registrations/{reg_id}")
-    assert del_reg.status_code == 200
 
     # 2. Экспорт Календаря в формате RFC 5545 iCalendar (.ics)
     with db_session() as conn:
@@ -236,8 +145,7 @@ def test_registrations_calendar_and_admin(client):
     assert "BEGIN:VCALENDAR" in ics_res.text
     assert "END:VCALENDAR" in ics_res.text
 
-    # 3. Админ-консоль: Data Takeout ZIP экспорт
-    # Регистрируем пользователя и делаем его администратором в БД
+    # 3. Админ-консоль: Data Takeout ZIP экспорт (чистый локальный JSON-бэкап)
     admin_reg = client.post("/api/passport/register", json={"role": "teacher", "password": "adminSecretPass13"}).json()["user"]
     with db_session() as conn:
         conn.execute("UPDATE users SET role = 'admin' WHERE id = ?", (admin_reg["id"],))
@@ -247,7 +155,8 @@ def test_registrations_calendar_and_admin(client):
     assert takeout_res.status_code == 200
     assert takeout_res.headers["content-type"] in ("application/zip", "application/x-zip-compressed")
 
-    # Проверяем содержимое ZIP архива на наличие манифеста IMS Common Cartridge
     with zipfile.ZipFile(io.BytesIO(takeout_res.content)) as zf:
         namelist = zf.namelist()
-        assert "imsmanifest.xml" in namelist or any("course" in name for name in namelist)
+        assert "courses.json" in namelist
+        assert "coursework.json" in namelist
+        assert "imsmanifest.xml" not in namelist
