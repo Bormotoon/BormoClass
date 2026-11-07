@@ -200,7 +200,7 @@ def ensure_student_copy(conn: sqlite3.Connection, coursework_row: Any, student_i
         if not isinstance(mat, dict):
             continue
 
-        drive_file_wrapper = mat.get("driveFile")
+        drive_file_wrapper = mat.get("localFile") or mat.get("driveFile")
         if not drive_file_wrapper or not isinstance(drive_file_wrapper, dict):
             continue
 
@@ -208,7 +208,11 @@ def ensure_student_copy(conn: sqlite3.Connection, coursework_row: Any, student_i
         if share_mode != "STUDENT_COPY":
             continue
 
-        inner_df = drive_file_wrapper.get("driveFile") if isinstance(drive_file_wrapper.get("driveFile"), dict) else drive_file_wrapper
+        inner_df = drive_file_wrapper.get("localFile") or drive_file_wrapper.get("driveFile")
+        if isinstance(inner_df, dict):
+            inner_df = inner_df
+        else:
+            inner_df = drive_file_wrapper
         template_file_id = inner_df.get("id")
         if not template_file_id:
             continue
@@ -238,11 +242,6 @@ def ensure_student_copy(conn: sqlite3.Connection, coursework_row: Any, student_i
         if not template_row:
             continue
 
-        user_row = conn.execute("SELECT handle FROM users WHERE id = ?", (student_id,)).fetchone()
-        handle = user_row["handle"] if user_row else f"student_{student_id}"
-
-        new_file_id = f"file_{secrets.token_hex(8)}"
-        new_file_title = f"{handle} — {template_row['file_title']}"
         now = int(time.time())
         student_folder = ensure_student_work_folder(conn, class_id, student_id)
 
@@ -258,12 +257,16 @@ def ensure_student_copy(conn: sqlite3.Connection, coursework_row: Any, student_i
             content = source_blob.read_bytes() if source_blob.exists() else b"{}"
             new_sha, new_rel, new_size = save_blob(content + f"\n// student_copy:{student_id}:{now}".encode("utf-8"))
             file_kind = "BOARD"
+            ext = "excalidraw"
         else:
             # Дедупликация O(1) дискового места
             new_sha = template_row["sha256_hex"]
             new_rel = template_row["disk_rel_path"]
             new_size = template_row["size_bytes"]
             file_kind = template_row["file_kind"]
+            ext = Path(template_row["file_title"]).suffix.lstrip(".") or "bin"
+
+        new_file_title = f"Вложение #{new_sha[:8]}.{ext}"
 
         conn.execute("""
             INSERT INTO stored_files (
@@ -297,7 +300,7 @@ def ensure_student_copy(conn: sqlite3.Connection, coursework_row: Any, student_i
 
         # Прикрепляем в submission_attachments
         attachment_payload = {
-            "driveFile": {
+            "localFile": {
                 "id": new_file_id,
                 "title": new_file_title,
                 "alternateLink": f"/api/storage/files/{new_file_id}",
@@ -325,8 +328,9 @@ def sync_submission_acl(conn: sqlite3.Connection, coursework_id: int, student_id
     for att in attachments:
         try:
             data = json.loads(att["attachment_json"])
-            if "driveFile" in data and isinstance(data["driveFile"], dict):
-                fid = data["driveFile"].get("id")
+            file_obj = data.get("localFile") or data.get("driveFile")
+            if file_obj and isinstance(file_obj, dict):
+                fid = file_obj.get("id")
                 if fid:
                     file_ids.add(fid)
         except Exception:

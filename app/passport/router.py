@@ -30,11 +30,11 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=4, max_length=128)
 
 class LoginRequest(BaseModel):
-    handle: str = Field(min_length=3, max_length=64)
+    handle: str = Field(min_length=3, max_length=64, pattern=r"^[А-ЯЁа-яё]+-[А-ЯЁа-яё]+-\d{3,4}$")
     password: str = Field(min_length=1, max_length=128)
 
 class RecoverRequest(BaseModel):
-    handle: str = Field(min_length=3, max_length=64)
+    handle: str = Field(min_length=3, max_length=64, pattern=r"^[А-ЯЁа-яё]+-[А-ЯЁа-яё]+-\d{3,4}$")
     recovery_words: List[str] = Field(min_length=4, max_length=4)
     new_password: str = Field(min_length=4, max_length=128)
 

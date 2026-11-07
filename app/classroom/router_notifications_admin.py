@@ -12,6 +12,8 @@ from pydantic import BaseModel, Field
 from app.db import db_session
 from app.passport.middleware import require_user
 from app.classroom.sse_hub import sse_hub
+from app.passport.generator import create_unique_callsign
+from app.passport.pii_guard import assert_zero_pii_text
 
 router = APIRouter(tags=["notifications_admin"])
 
@@ -513,6 +515,10 @@ def import_oneroster(req: Optional[OneRosterImportRequest] = None, request: Requ
         if req.enrollments_csv:
             enrollments_data = req.enrollments_csv
 
+    for text_val in (classes_data, users_data, enrollments_data):
+        if text_val:
+            assert_zero_pii_text(text_val)
+
     imported_classes = 0
     imported_users = 0
     imported_enrollments = 0
@@ -551,27 +557,26 @@ def import_oneroster(req: Optional[OneRosterImportRequest] = None, request: Requ
                         (alias_key, cid, now)
                     )
 
-        # 2. Импорт пользователей (Zero-PII: только handle и роль!)
+        # 2. Импорт пользователей (Zero-PII: строго анонимный позывной через create_unique_callsign!)
         handle_to_id = {}
         if users_data:
             reader = csv.DictReader(io.StringIO(users_data))
             for row in reader:
-                handle = row.get("username") or row.get("handle") or row.get("sourcedId") or f"user_{secrets.token_hex(4)}"
+                ref_key = row.get("sourcedId") or row.get("username") or row.get("handle")
+                handle = create_unique_callsign(conn)
                 role = "teacher" if row.get("role") in ("teacher", "administrator") else "student"
 
-                existing = conn.execute("SELECT id FROM users WHERE handle = ?", (handle,)).fetchone()
-                if existing:
-                    handle_to_id[handle] = existing["id"]
-                else:
-                    cur = conn.execute(
-                        """INSERT INTO users (
-                            handle, role, password_hash, recovery_words_hash, avatar_seed, created_at
-                        ) VALUES (?, ?, 'provisioned_placeholder', 'provisioned_placeholder', 1, ?)""",
-                        (handle, role, now)
-                    )
-                    uid = cur.lastrowid
-                    handle_to_id[handle] = uid
-                    imported_users += 1
+                cur = conn.execute(
+                    """INSERT INTO users (
+                        handle, role, password_hash, recovery_words_hash, avatar_seed, created_at
+                    ) VALUES (?, ?, 'provisioned_placeholder', 'provisioned_placeholder', 1, ?)""",
+                    (handle, role, now)
+                )
+                uid = cur.lastrowid
+                if ref_key:
+                    handle_to_id[ref_key] = uid
+                handle_to_id[handle] = uid
+                imported_users += 1
 
         # 3. Импорт зачислений
         if enrollments_data:
@@ -675,55 +680,12 @@ def _generate_takeout_zip(conn) -> bytes:
 
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        # JSON dump
+        # Чистый локальный JSON-бэкап (100% автономность, Zero-PII)
         zf.writestr("courses.json", json.dumps([dict(r) for r in classes_rows], ensure_ascii=False, indent=2))
         zf.writestr("topics.json", json.dumps([dict(r) for r in topics_rows], ensure_ascii=False, indent=2))
         zf.writestr("coursework.json", json.dumps([dict(r) for r in coursework_rows], ensure_ascii=False, indent=2))
         zf.writestr("rubrics.json", json.dumps([dict(r) for r in rubrics_rows], ensure_ascii=False, indent=2))
         zf.writestr("submissions.json", json.dumps([dict(r) for r in submissions_rows], ensure_ascii=False, indent=2))
-
-        # Генерация IMS Common Cartridge 1.3 imsmanifest.xml
-        manifest = ET.Element("manifest", {
-            "identifier": "bormoclass_cartridge_manifest",
-            "xmlns": "http://www.imsglobal.org/xsd/imsccv1p3/imscp_v1p1",
-            "xmlns:lom": "http://ltsc.ieee.org/xsd/imsccv1p3/LOM/resource"
-        })
-        metadata = ET.SubElement(manifest, "metadata")
-        schema = ET.SubElement(metadata, "schema")
-        schema.text = "IMS Common Cartridge"
-        schemaversion = ET.SubElement(metadata, "schemaversion")
-        schemaversion.text = "1.3.0"
-
-        organizations = ET.SubElement(manifest, "organizations")
-        organization = ET.SubElement(organizations, "organization", {"identifier": "org_bormoclass", "structure": "rooted-hierarchy"})
-        org_title = ET.SubElement(organization, "title")
-        org_title.text = "BormoClass Cartridge Export"
-
-        resources = ET.SubElement(manifest, "resources")
-
-        for c in classes_rows:
-            c_item = ET.SubElement(organization, "item", {"identifier": f"course_{c['id']}"})
-            c_title = ET.SubElement(c_item, "title")
-            c_title.text = c["title"]
-
-            cw_list = [cw for cw in coursework_rows if cw["class_id"] == c["id"]]
-            for cw in cw_list:
-                cw_item = ET.SubElement(c_item, "item", {
-                    "identifier": f"cw_{cw['id']}",
-                    "identifierref": f"res_cw_{cw['id']}"
-                })
-                cw_title = ET.SubElement(cw_item, "title")
-                cw_title.text = cw["title"]
-
-                res = ET.SubElement(resources, "resource", {
-                    "identifier": f"res_cw_{cw['id']}",
-                    "type": "imsbasiclti_xmlv1p0"
-                })
-                desc = ET.SubElement(res, "description")
-                desc.text = cw["instructions"] or ""
-
-        xml_bytes = ET.tostring(manifest, encoding="utf-8", xml_declaration=True)
-        zf.writestr("imsmanifest.xml", xml_bytes)
 
     return buf.getvalue()
 

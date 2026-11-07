@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from app.db import db_session
 from app.passport.middleware import require_user, require_teacher
 from app.classroom.sse_hub import sse_hub
+from app.passport.pii_guard import assert_zero_pii_text
 
 router = APIRouter(prefix="/api/classroom", tags=["coursework"])
 
@@ -166,6 +167,10 @@ def create_coursework(class_id: int, req: CourseworkCreateRequest, request: Requ
     user = require_teacher(request)
     now = int(time.time())
 
+    assert_zero_pii_text(req.title)
+    if req.instructions:
+        assert_zero_pii_text(req.instructions)
+
     with db_session() as conn:
         class_row = conn.execute("SELECT teacher_id, grade_level FROM classes WHERE id = ?", (class_id,)).fetchone()
         if not class_row or (class_row["teacher_id"] != user["user_id"] and user["role"] != "admin"):
@@ -303,6 +308,11 @@ def update_coursework(coursework_id: int, req: CourseworkUpdateRequest, request:
         if req.is_homework == 1 and cw_row["grade_level"] == 1:
             raise HTTPException(status_code=400, detail="Для 1-го класса домашние задания запрещены")
 
+        if req.title:
+            assert_zero_pii_text(req.title)
+        if req.instructions:
+            assert_zero_pii_text(req.instructions)
+
         updates = ["updated_at = ?"]
         params = [now]
         for field in ("topic_id", "title", "instructions", "attachments_json", "rubric_json",
@@ -375,52 +385,3 @@ def assign_coursework_to_groups(class_id: int, req: AssignGroupsRequest, request
             _populate_submissions_for_coursework(conn, req.coursework_id, class_id, target_students_val)
 
         return {"ok": True, "student_ids": student_ids}
-
-@router.get("/coursework/{cw_id}/peer-answers")
-def get_peer_answers(cw_id: int, request: Request):
-    user = require_user(request)
-    user_id = user["user_id"]
-    is_teacher = user["role"] in ("teacher", "admin")
-
-    with db_session() as conn:
-        cw = conn.execute("SELECT * FROM coursework WHERE id = ?", (cw_id,)).fetchone()
-        if not cw:
-            raise HTTPException(status_code=404, detail="Задание не найдено")
-
-        # Если это ученик, проверяем, что он сдал работу (TURNED_IN или RETURNED)
-        if not is_teacher:
-            my_sub = conn.execute("""
-                SELECT status, v1_state FROM submissions
-                WHERE coursework_id = ? AND student_id = ?
-            """, (cw_id, user_id)).fetchone()
-
-            has_turned_in = False
-            if my_sub:
-                if my_sub["status"] in ("turned_in", "returned") or my_sub.get("v1_state") in ("TURNED_IN", "RETURNED"):
-                    has_turned_in = True
-
-            if not has_turned_in:
-                raise HTTPException(status_code=403, detail="Ответы одноклассников доступны только после сдачи своего ответа")
-
-        # Получаем ответы одноклассников
-        rows = conn.execute("""
-            SELECT s.student_id, s.short_answer_text, s.payload_json, s.updated_at,
-                   u.handle, u.avatar_seed
-            FROM submissions s
-            JOIN users u ON s.student_id = u.id
-            WHERE s.coursework_id = ? AND (s.status IN ('turned_in', 'returned') OR s.v1_state IN ('TURNED_IN', 'RETURNED'))
-            ORDER BY s.updated_at ASC
-        """, (cw_id,)).fetchall()
-
-        results = []
-        for r in rows:
-            ans_text = r["short_answer_text"] or r["payload_json"] or ""
-            results.append({
-                "student_id": r["student_id"],
-                "handle": r["handle"],
-                "avatar_seed": r["avatar_seed"],
-                "answer": ans_text,
-                "submitted_at": r["updated_at"]
-            })
-
-        return results

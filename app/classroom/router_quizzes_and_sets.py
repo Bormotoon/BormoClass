@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from app.db import db_session
 from app.passport.middleware import require_user, require_teacher
+from app.passport.pii_guard import assert_zero_pii_text
 
 router = APIRouter(tags=["quizzes_and_sets"])
 
@@ -90,10 +91,6 @@ def _score_single_question(q: dict, ans: Any) -> float:
         correct = str(q.get("correct", "")).strip().lower()
         return max_pts if str(ans).strip().lower() == correct else 0.0
 
-    elif q_type == "PARAGRAPH":
-        # Ручная проверка учителем: авто-балл 0
-        return 0.0
-
     elif q_type == "NUMERIC_TOLERANCE":
         target = float(q.get("target", 0.0))
         tolerance = float(q.get("tolerance", 0.001))
@@ -126,6 +123,19 @@ def _score_single_question(q: dict, ans: Any) -> float:
 def create_quiz(req: QuizCreateRequest, request: Request):
     user = require_teacher(request)
     now = int(time.time())
+
+    try:
+        qs = json.loads(req.questions_json)
+        if isinstance(qs, list):
+            for q in qs:
+                if isinstance(q, dict) and q.get("type") == "PARAGRAPH":
+                    raise HTTPException(
+                        status_code=422,
+                        detail="Тип вопроса PARAGRAPH (эссе в свободной форме) запрещен стандартом Zero-PII (152-ФЗ РФ)."
+                    )
+    except json.JSONDecodeError:
+        pass
+
     with db_session() as conn:
         cursor = conn.execute("""
             INSERT INTO quizzes (
@@ -238,6 +248,15 @@ def submit_quiz(quiz_id: int, req: QuizSubmitRequest, request: Request):
             pts = float(q.get("points", 1.0))
             max_possible += pts
             ans = req.answers_json.get(q_id)
+            q_type = q.get("type")
+            if q_type == "SHORT_TEXT" and ans is not None:
+                ans_str = str(ans).strip()
+                if len(ans_str) > 64:
+                    raise HTTPException(
+                        status_code=422,
+                        detail="Ответ типа SHORT_TEXT не может превышать 64 символа (Zero-PII)."
+                    )
+                assert_zero_pii_text(ans_str)
             earned = _score_single_question(q, ans)
             total_score += earned
 
@@ -586,14 +605,14 @@ def run_originality_check(cw_id: int, req: OriginalityCheckRequest, request: Req
                 (cw_id, student_id)
             ).fetchone()
             if sub:
-                text_to_check = sub.get("short_answer_text") or sub.get("payload_json") or ""
+                text_to_check = sub.get("payload_json") or ""
 
         if not text_to_check or len(text_to_check.strip()) < 10:
             return {"ok": True, "match_percent": 0.0, "matches": []}
 
         # База сравнения: другие сдачи курса и инструкции задания
         other_subs = conn.execute("""
-            SELECT student_id, payload_json, short_answer_text
+            SELECT student_id, payload_json
             FROM submissions
             WHERE coursework_id = ? AND student_id != ?
         """, (cw_id, student_id)).fetchall()
@@ -604,7 +623,7 @@ def run_originality_check(cw_id: int, req: OriginalityCheckRequest, request: Req
         is_code = "def " in text_to_check or "class " in text_to_check or "import " in text_to_check
 
         for os in other_subs:
-            other_text = os.get("short_answer_text") or os.get("payload_json") or ""
+            other_text = os.get("payload_json") or ""
             if not other_text:
                 continue
 

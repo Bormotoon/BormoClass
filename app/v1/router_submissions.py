@@ -147,7 +147,7 @@ def _submission_row_to_schema(conn, row: dict, cw: dict, is_student: bool) -> St
 
     short_ans = None
     if wtype == "SHORT_ANSWER_QUESTION":
-        short_ans = ShortAnswerSubmission(answer=row.get("short_answer_text") or "")
+        short_ans = ShortAnswerSubmission(answer=row.get("payload_json") or "")
 
     mc_ans = None
     if wtype == "MULTIPLE_CHOICE_QUESTION":
