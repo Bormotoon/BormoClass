@@ -64,12 +64,11 @@ CREATE TABLE IF NOT EXISTS classes (
     created_at                 INTEGER NOT NULL
 );
 
--- 4. Участники класса, номера парт и клиентский шифротекст учителя
+-- 4. Участники класса и номера парт (1..40)
 CREATE TABLE IF NOT EXISTS class_members (
     class_id           INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
     student_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     seat_number        INTEGER NOT NULL CHECK (seat_number BETWEEN 1 AND 40), -- Номер парты (1..40)
-    encrypted_note     TEXT NOT NULL DEFAULT '',            -- AES-GCM шифротекст с ФИО (ключ только в браузере учителя)
     is_present         INTEGER NOT NULL DEFAULT 1,          -- Присутствие на уроке (1 = на месте, 0 = отсутствует)
     traffic_light      TEXT NOT NULL DEFAULT 'green',       -- 'green' (понятно) | 'yellow' (вопрос) | 'red' (нужна помощь)
     is_muted           INTEGER NOT NULL DEFAULT 0,

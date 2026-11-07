@@ -16,6 +16,11 @@ PATRONYMIC_SUFFIXES = r'(?:ович|евич|овна|евна|ич|ична)'
 FIO_THREE_WORDS_1 = re.compile(rf'\b[А-ЯЁ][а-яё]+[\s_]+[А-ЯЁ][а-яё]+[\s_]+[А-ЯЁ][а-яё]*{PATRONYMIC_SUFFIXES}\b')
 FIO_THREE_WORDS_2 = re.compile(rf'\b[А-ЯЁ][а-яё]+[\s_]+[А-ЯЁ][а-яё]*{PATRONYMIC_SUFFIXES}[\s_]+[А-ЯЁ][а-яё]+\b')
 
+# Двусловные имена/фамилии: "Смирнов Дмитрий", "Дмитрий Смирнов"
+SURNAME_SUFFIXES = r'(?:ов|ев|ин|ын|ский|цкий|ова|ева|ина|ына|ская|цкая)'
+FIO_TWO_WORDS_1 = re.compile(rf'\b[А-ЯЁ][а-яё]*{SURNAME_SUFFIXES}\s+[А-ЯЁ][а-яё]+\b')
+FIO_TWO_WORDS_2 = re.compile(rf'\b[А-ЯЁ][а-яё]+\s+[А-ЯЁ][а-яё]*{SURNAME_SUFFIXES}\b')
+
 def assert_zero_pii_text(text: Optional[str]) -> None:
     """
     Проверяет строку на отсутствие персональных данных (email, телефоны РФ, СНИЛС, ФИО).
@@ -45,12 +50,14 @@ def assert_zero_pii_text(text: Optional[str]) -> None:
             detail="Обнаружены персональные данные (СНИЛС). По закону 152-ФЗ РФ и стандарту Zero-PII ввод документов запрещен."
         )
 
-    # 4. ФИО (Инициалы или полное тройное имя с отчеством)
+    # 4. ФИО (Инициалы, полное тройное имя с отчеством или пара Фамилия/Имя)
     if (
         FIO_INITIALS_PATTERN_1.search(text)
         or FIO_INITIALS_PATTERN_2.search(text)
         or FIO_THREE_WORDS_1.search(text)
         or FIO_THREE_WORDS_2.search(text)
+        or FIO_TWO_WORDS_1.search(text)
+        or FIO_TWO_WORDS_2.search(text)
     ):
         raise HTTPException(
             status_code=422,

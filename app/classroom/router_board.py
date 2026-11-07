@@ -75,7 +75,7 @@ def get_call_wheel_candidates(class_id: int, request: Request):
 
         # Выбираем только присутствующих учеников
         candidates = conn.execute("""
-            SELECT cm.student_id, cm.seat_number, cm.encrypted_note, u.handle, u.avatar_seed
+            SELECT cm.student_id, cm.seat_number, u.handle, u.avatar_seed
             FROM class_members cm
             JOIN users u ON cm.student_id = u.id
             WHERE cm.class_id = ? AND cm.is_present = 1
@@ -85,7 +85,7 @@ def get_call_wheel_candidates(class_id: int, request: Request):
         return [dict(c) for c in candidates]
 
 # -----------------------------------------------------------------------------
-# Персональные и групповые доски заданий (STUDENT_COPY / EDIT)
+# Индивидуальные и групповые доски заданий (STUDENT_COPY / EDIT)
 # -----------------------------------------------------------------------------
 
 class CourseworkBoardUpdateRequest(BaseModel):

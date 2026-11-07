@@ -1,11 +1,10 @@
 /**
  * BormoClass Main SPA Engine (~15 KB Vanilla JS)
- * Zero-PII, Material Design 3.0, AES-GCM 256-bit WebCrypto Vault,
+ * Zero-PII (152-FZ), Material Design 3.0,
  * Simonov SOU Analytics, SSE Live Matrix and Client-side CSV Export.
  */
 
 import { ICONS, getIcon } from "./icons.js";
-import { TeacherZeroKnowledgeVault } from "./webcrypto-vault.js";
 
 import * as ApiV1 from "./modules/api-v1.js";
 import * as HomeDrawer from "./modules/home-and-drawer.js";
@@ -132,7 +131,6 @@ class BormoClassApp {
     this.currentView = "classes"; // 'classes' | 'class-detail' | 'to-review' | 'to-do' | 'calendar'
     this.currentClassId = null;
     this.currentClassTab = "stream"; // 'stream' | 'classwork' | 'people' | 'grades'
-    this.vault = null;
     this.classEventSource = null;
 
     this.init();
@@ -145,10 +143,6 @@ class BormoClassApp {
     if (window.pbPassport) {
       window.pbPassport.onUserChange((u) => {
         this.user = u;
-        if (u && (u.role === "teacher" || u.role === "admin")) {
-          this.vault = new TeacherZeroKnowledgeVault(u.id);
-          this.vault.initOrLoadKey();
-        }
         this.renderUserBar();
         this.renderNavigation();
         this.route();
@@ -1226,11 +1220,6 @@ class BormoClassApp {
     container.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
         <h3>Схема 3 рядов парт (1..40) и присутствие</h3>
-        ${
-          isTeacher
-            ? `<button class="btn btn-secondary" id="vaultKeyBtn">🔑 Ключ шифрования учителя</button>`
-            : ""
-        }
       </div>
 
       <div class="desks-container">
@@ -1240,10 +1229,6 @@ class BormoClassApp {
         </div>
       </div>
     `;
-
-    if (document.getElementById("vaultKeyBtn")) {
-      document.getElementById("vaultKeyBtn").onclick = () => this.showVaultKeyModal();
-    }
 
     const res = await fetch(`/api/classroom/classes/${cls.id}/members`);
     const members = res.ok ? await res.json() : [];
@@ -1304,16 +1289,6 @@ class BormoClassApp {
       </div>
     `;
 
-    // Try decrypt name locally if vault is available
-    if (cls.is_teacher && this.vault && member.encrypted_note) {
-      this.vault.decryptStudentName(member.encrypted_note).then((dec) => {
-        if (dec && !dec.includes("🔒")) {
-          const el = document.getElementById(`seatName_${member.student_id}`);
-          if (el) el.textContent = dec;
-        }
-      });
-    }
-
     if (cls.is_teacher) {
       btn.onclick = () => this.showStudentManagementModal(cls.id, member);
     }
@@ -1335,10 +1310,6 @@ class BormoClassApp {
               <div style="font-weight: 800; font-size: 1.1rem; color: var(--md-sys-color-primary);">${member.handle}</div>
             </div>
             <div>
-              <label style="font-size: 0.85rem; font-weight: 600;">ФИО (шифруется AES-GCM 256-bit локально в браузере)</label>
-              <input type="text" id="plainStudentName" placeholder="Иванов Иван" class="btn-secondary" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant);">
-            </div>
-            <div>
               <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600;">
                 <input type="checkbox" id="isPresentCheck" ${member.is_present ? "checked" : ""}> Присутствует на уроке
               </label>
@@ -1355,33 +1326,14 @@ class BormoClassApp {
 
     document.getElementById("closeMemberModal").onclick = () => (modal.innerHTML = "");
 
-    if (this.vault && member.encrypted_note) {
-      this.vault.decryptStudentName(member.encrypted_note).then((dec) => {
-        if (dec && !dec.includes("🔒")) {
-          document.getElementById("plainStudentName").value = dec;
-        }
-      });
-    }
-
     document.getElementById("saveMemberBtn").onclick = async () => {
-      const name = document.getElementById("plainStudentName").value.trim();
       const isPresent = document.getElementById("isPresentCheck").checked ? 1 : 0;
-      let encryptedNote = member.encrypted_note;
-
-      if (name && this.vault) {
-        if (!this.vault.hasKey()) {
-          showToast("Сначала задайте ключ учителя в меню «Ключ шифрования»!", "error");
-          return;
-        }
-        encryptedNote = await this.vault.encryptStudentName(name);
-      }
 
       try {
         const res = await fetch(`/api/classroom/classes/${classId}/members/${member.student_id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            encrypted_note: encryptedNote,
             is_present: isPresent,
           }),
         });
@@ -1418,36 +1370,6 @@ class BormoClassApp {
     };
   }
 
-  showVaultKeyModal() {
-    const modal = document.getElementById("modalContainer");
-    modal.innerHTML = `
-      <div class="modal-overlay">
-        <div class="modal-card">
-          <div class="modal-header">
-            <h3>Ключ шифрования учителя (WebCrypto AES-GCM)</h3>
-            <button class="btn btn-secondary" id="closeVaultModal">${getIcon("close")}</button>
-          </div>
-          <p style="font-size: 0.85rem; color: var(--md-sys-color-on-surface-variant); margin-bottom: 1rem;">
-            Введите секретную парольную фразу. Из неё локально в браузере будет получен 256-битный ключ AES-GCM для расшифровки реальных фамилий учеников.
-          </p>
-          <input type="password" id="vaultPassphrase" placeholder="Секретная фраза учителя" class="btn-secondary" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--md-sys-color-outline-variant); margin-bottom: 1rem;">
-          <button class="btn btn-primary" id="initVaultBtn" style="width: 100%;">Инициализировать ключ</button>
-        </div>
-      </div>
-    `;
-    document.getElementById("closeVaultModal").onclick = () => (modal.innerHTML = "");
-    document.getElementById("initVaultBtn").onclick = async () => {
-      const pass = document.getElementById("vaultPassphrase").value;
-      if (!pass) return;
-      await this.vault.initOrLoadKey(pass);
-      modal.innerHTML = "";
-      alert("Ключ успешно загружен!");
-      if (this.currentClassId) {
-        this.renderPeopleTab({ id: this.currentClassId, is_teacher: true });
-      }
-    };
-  }
-
   // TAB 4: GRADES (LIVE MATRIX & SIMONOV SOU)
   async renderGradesTab(cls) {
     const container = document.getElementById("classTabContent");
@@ -1460,7 +1382,7 @@ class BormoClassApp {
     container.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
         <h3>Живая ведомость оценок</h3>
-        <button class="btn btn-secondary" id="exportCsvBtn">${getIcon("download")} Экспорт CSV (с ФИО)</button>
+        <button class="btn btn-secondary" id="exportCsvBtn">${getIcon("download")} Экспорт CSV</button>
       </div>
 
       <!-- Simonov SOU Analytics Panel -->
@@ -1492,7 +1414,7 @@ class BormoClassApp {
           <thead>
             <tr>
               <th style="min-width: 60px;">Парта</th>
-              <th style="min-width: 140px;">Ученик</th>
+              <th style="min-width: 140px;">Позывной</th>
               ${data.coursework.map((cw) => `<th style="text-align: center; min-width: 100px;">${cw.title}</th>`).join("")}
             </tr>
           </thead>
@@ -1520,21 +1442,7 @@ class BormoClassApp {
       </div>
     `;
 
-    // Local decryption of names for matrix
-    if (this.vault) {
-      for (const st of data.students) {
-        if (st.encrypted_note) {
-          this.vault.decryptStudentName(st.encrypted_note).then((dec) => {
-            if (dec && !dec.includes("🔒")) {
-              const el = document.getElementById(`mStudentName_${st.student_id}`);
-              if (el) el.textContent = dec;
-            }
-          });
-        }
-      }
-    }
-
-    document.getElementById("exportCsvBtn").onclick = () => this.exportCsvWithDecryptedNames(data);
+    document.getElementById("exportCsvBtn").onclick = () => this.exportCsv(data);
 
     if (cls.is_teacher) {
       document.querySelectorAll(".gradebook-cell").forEach((cell) => {
@@ -1605,17 +1513,13 @@ class BormoClassApp {
     });
   }
 
-  async exportCsvWithDecryptedNames(matrixData) {
-    // Generate UTF-8 with BOM CSV on client side
-    const headers = ["Парта", "Позывной", "ФИО (расшифровано)", ...matrixData.coursework.map((c) => c.title)];
+  exportCsv(matrixData) {
+    // Generate UTF-8 with BOM CSV on client side (Zero-PII)
+    const headers = ["Парта", "Позывной", ...matrixData.coursework.map((c) => c.title)];
     const rows = [];
 
     for (const st of matrixData.students) {
-      let realName = "";
-      if (this.vault && st.encrypted_note) {
-        realName = await this.vault.decryptStudentName(st.encrypted_note) || "";
-      }
-      const stRow = [st.seat_number, st.handle, realName];
+      const stRow = [st.seat_number, st.handle];
 
       for (const cw of matrixData.coursework) {
         const sub = matrixData.submissions[`${cw.id}_${st.student_id}`];

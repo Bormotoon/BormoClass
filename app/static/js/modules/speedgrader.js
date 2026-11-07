@@ -754,7 +754,7 @@ export class SpeedGrader {
       items.push({ type: "quiz", title: "Ответы Quiz / Тест", data: payload.quiz_answers });
     }
     if (payload.board_id || (payload.files && payload.files.some((f) => f.title && f.title.endsWith(".excalidraw")))) {
-      items.push({ type: "board", title: "Персональная доска Excalidraw", data: payload });
+      items.push({ type: "board", title: "Индивидуальная доска Excalidraw", data: payload });
     }
 
     if (items.length === 0) {

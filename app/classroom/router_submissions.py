@@ -75,7 +75,7 @@ def list_submissions(coursework_id: int, request: Request):
 
         if is_teacher and (cw["teacher_id"] == user_id or user["role"] == "admin"):
             rows = conn.execute("""
-                SELECT s.*, u.handle, u.avatar_seed, cm.seat_number, cm.encrypted_note
+                SELECT s.*, u.handle, u.avatar_seed, cm.seat_number
                 FROM submissions s
                 JOIN users u ON s.student_id = u.id
                 LEFT JOIN class_members cm ON s.student_id = cm.student_id AND cm.class_id = ?
@@ -328,7 +328,7 @@ def get_class_matrix(class_id: int, request: Request):
             raise HTTPException(status_code=404, detail="Класс не найден")
 
         members = conn.execute("""
-            SELECT cm.student_id, cm.seat_number, cm.encrypted_note, cm.is_present, u.handle, u.avatar_seed
+            SELECT cm.student_id, cm.seat_number, cm.is_present, u.handle, u.avatar_seed
             FROM class_members cm
             JOIN users u ON cm.student_id = u.id
             WHERE cm.class_id = ?
@@ -358,8 +358,6 @@ def get_class_matrix(class_id: int, request: Request):
                 "avatar_seed": m["avatar_seed"],
                 "is_present": m["is_present"]
             }
-            if is_teacher:
-                item["encrypted_note"] = m["encrypted_note"]
             students_list.append(item)
 
         subs_map = {f"{s['coursework_id']}_{s['student_id']}": dict(s) for s in subs}

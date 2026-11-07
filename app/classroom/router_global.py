@@ -38,7 +38,7 @@ def get_to_review(
                    COALESCE(cw.reviewed_by_teacher, 0) as reviewed_by_teacher,
                    c.id as class_id, c.title as class_title,
                    u.handle as student_handle, u.avatar_seed,
-                   cm.seat_number, cm.encrypted_note
+                   cm.seat_number
             FROM submissions s
             JOIN coursework cw ON s.coursework_id = cw.id
             JOIN classes c ON cw.class_id = c.id

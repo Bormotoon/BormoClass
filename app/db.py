@@ -74,6 +74,14 @@ def run_migrations(conn: sqlite3.Connection) -> None:
         "student_folder_id": "TEXT",
     })
 
+    # Гарантия 152-ФЗ РФ и Zero-PII: удаление любых следов шифротекста заметок
+    existing_cm_cols = {
+        row["name"].lower()
+        for row in conn.execute("PRAGMA table_info(class_members)").fetchall()
+    }
+    if "encrypted_note" in existing_cm_cols:
+        conn.execute("ALTER TABLE class_members DROP COLUMN encrypted_note;")
+
     _ensure_columns(conn, "class_topics", {
         "updated_at": "INTEGER NOT NULL DEFAULT 0",
     })
