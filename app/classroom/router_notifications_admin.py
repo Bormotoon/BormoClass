@@ -724,6 +724,7 @@ def export_admin_takeout_zip(request: Request):
             headers={"Content-Disposition": "attachment; filename=bormoclass-admin-takeout.zip"}
         )
 
+@router.get("/api/classroom/teacher/takeout.zip")
 @router.get("/api/classroom/takeout.zip")
 def export_teacher_takeout_zip(request: Request):
     user = require_teacher(request)

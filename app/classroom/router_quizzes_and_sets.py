@@ -429,7 +429,8 @@ def check_practice_card(id: int, req: PracticeCardCheckRequest, request: Request
 
         target_card = None
         for c in cards:
-            if str(c.get("id")) == str(req.card_id):
+            cid = c.get("id") or c.get("card_id")
+            if str(cid) == str(req.card_id):
                 target_card = c
                 break
 

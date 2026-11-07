@@ -13,6 +13,7 @@ services:
     volumes:
       - bormoclass_data:/data
       - ./app/static:/srv/bormoclass/app/static:ro
+      - /srv/bormoclass/app/static/board
 
   caddy:
     image: caddy:2-alpine
@@ -25,6 +26,7 @@ services:
     volumes:
       - ./edge/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./app/static:/srv/bormoclass/app/static:ro
+      - /srv/bormoclass/app/static/board
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
