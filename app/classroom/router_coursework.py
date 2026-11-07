@@ -240,6 +240,7 @@ def reuse_coursework(class_id: int, coursework_id: int, req: ReusePostRequest, r
         source_cw = conn.execute("SELECT * FROM coursework WHERE id = ?", (coursework_id,)).fetchone()
         if not source_cw:
             raise HTTPException(status_code=404, detail="Исходное задание не найдено")
+        source_cw = dict(source_cw)
 
         target_class = conn.execute("SELECT teacher_id, grade_level FROM classes WHERE id = ?", (req.target_class_id,)).fetchone()
         if not target_class or (target_class["teacher_id"] != user["user_id"] and user["role"] != "admin"):

@@ -430,7 +430,7 @@ def admin_add_class_member(class_id: int, body: AdminAddMember, request: Request
 
         if body.role == "teacher":
             conn.execute(
-                """INSERT INTO course_teachers (class_id, teacher_id, created_at)
+                """INSERT INTO course_teachers (class_id, teacher_id, joined_at)
                    VALUES (?, ?, ?)
                    ON CONFLICT(class_id, teacher_id) DO NOTHING""",
                 (class_id, body.user_id, now)
@@ -438,7 +438,7 @@ def admin_add_class_member(class_id: int, body: AdminAddMember, request: Request
         else:
             seat = body.seat_number or 1
             conn.execute(
-                """INSERT INTO class_members (class_id, student_id, seat_number, enrollment_active, created_at)
+                """INSERT INTO class_members (class_id, student_id, seat_number, enrollment_active, joined_at)
                    VALUES (?, ?, ?, 1, ?)
                    ON CONFLICT(class_id, student_id) DO UPDATE SET
                        enrollment_active = 1,
@@ -468,7 +468,7 @@ def transfer_class_ownership(class_id: int, body: TransferOwnershipRequest, requ
         # Предыдущего владельца добавляем в со-учителя, если он ещё там не состоит
         now = int(time.time())
         conn.execute(
-            """INSERT INTO course_teachers (class_id, teacher_id, created_at)
+            """INSERT INTO course_teachers (class_id, teacher_id, joined_at)
                VALUES (?, ?, ?)
                ON CONFLICT(class_id, teacher_id) DO NOTHING""",
             (class_id, old_teacher_id, now)
@@ -601,12 +601,12 @@ def import_oneroster(req: Optional[OneRosterImportRequest] = None, request: Requ
                 if target_cid and target_uid:
                     if enroll_role == "teacher":
                         conn.execute(
-                            "INSERT OR IGNORE INTO course_teachers (class_id, teacher_id, created_at) VALUES (?, ?, ?)",
+                            "INSERT OR IGNORE INTO course_teachers (class_id, teacher_id, joined_at) VALUES (?, ?, ?)",
                             (target_cid, target_uid, now)
                         )
                     else:
                         conn.execute(
-                            """INSERT INTO class_members (class_id, student_id, seat_number, enrollment_active, created_at)
+                            """INSERT INTO class_members (class_id, student_id, seat_number, enrollment_active, joined_at)
                                VALUES (?, ?, 1, 1, ?)
                                ON CONFLICT(class_id, student_id) DO UPDATE SET enrollment_active = 1""",
                             (target_cid, target_uid, now)

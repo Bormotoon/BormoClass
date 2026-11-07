@@ -255,12 +255,11 @@ def add_comment(req: CommentBankRequest, request: Request):
 def delete_comment(comment_id: int, request: Request):
     user = require_teacher(request)
     with db_session() as conn:
-        conn.execute("DELETE FROM comment_bank WHERE id = ? AND teacher_id = ?", (comment_id, user["user_id"]))
-        return {
-            "ok": True,
-            "grade_calc_type": calc_type,
-            "grade_display_setting": req.grade_display_setting or class_row["grade_display_setting"]
-        }
+        conn.execute(
+            "DELETE FROM comment_bank WHERE id = ? AND teacher_id = ?",
+            (comment_id, user["user_id"])
+        )
+        return {"ok": True, "id": comment_id}
 
 # -----------------------------------------------------------------------------
 # Аналитика (Усп, КЗ, СОУ по Симонову) и Матрица оценок
