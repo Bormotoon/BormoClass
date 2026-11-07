@@ -15,7 +15,6 @@ const PRECACHE_ASSETS = [
   "/static/css/md3-tokens.css",
   "/static/css/app.css",
   "/static/js/icons.js",
-  "/static/js/webcrypto-vault.js",
   "/static/js/sanpin-timer.js",
   "/static/js/pb-passport-bridge.js",
   "/static/js/modules/speedgrader.js",

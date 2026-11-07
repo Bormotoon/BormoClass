@@ -46,7 +46,6 @@ FIELD_LABELS = {
     "max_points": "Максимальный балл",
     "recess_reward": "Награда секундами",
     "topic_id": "Тема",
-    "encrypted_note": "Заметка",
     "is_present": "Присутствие",
     "traffic_light": "Светофор понимания",
     "payload_json": "Ответ ученика",

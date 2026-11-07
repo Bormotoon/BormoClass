@@ -8,17 +8,15 @@
  *  - Final grade calculation (TOTAL_POINTS / WEIGHTED_CATEGORIES)
  *  - Russian educational metrics panel (Усп%, КЗ%, СОУ%)
  *  - Standards Mastery Matrix tab
- *  - Client-side Zero-PII CSV export using TeacherZeroKnowledgeVault (AES-GCM)
+ *  - Client-side Zero-PII CSV export
  */
 
-import { TeacherZeroKnowledgeVault } from "../webcrypto-vault.js";
 import { openSpeedGrader } from "./speedgrader.js";
 
 export class GradebookPeriodsView {
   constructor(options = {}) {
     this.container = options.container || document.getElementById("appMain");
     this.classId = options.classId;
-    this.vault = options.vault || null;
     this.activePeriodId = null; // null = all periods
     this.activeTab = "gradebook"; // 'gradebook' | 'matrix'
     this.gradebookData = null;
@@ -536,24 +534,14 @@ export class GradebookPeriodsView {
     if (!this.gradebookData) return;
     const { courseworks, students } = this.gradebookData;
 
-    // Header row
-    const headers = ["Парта", "Позывной", "ФИО (расшифровано локально)", "Итог (%)", ...courseworks.map((c) => c.title)];
+    // Header row: Zero-PII (seat number and generated handle only)
+    const headers = ["Парта", "Позывной", "Итог (%)", ...courseworks.map((c) => c.title)];
     const rows = [];
 
     for (const st of students) {
-      let decryptedName = "";
-      if (this.vault && st.encrypted_note) {
-        try {
-          decryptedName = (await this.vault.decryptStudentName(st.encrypted_note)) || "";
-        } catch {
-          decryptedName = "";
-        }
-      }
-
       const stRow = [
         st.seat_number || "",
         st.handle || "",
-        decryptedName,
         st.overall_percent !== null ? `${st.overall_percent}%` : "",
       ];
 

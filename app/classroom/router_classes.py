@@ -33,7 +33,6 @@ class JoinClassRequest(BaseModel):
     seat_number: int = Field(ge=1, le=40)
 
 class UpdateMemberRequest(BaseModel):
-    encrypted_note: Optional[str] = None
     is_present: Optional[int] = Field(default=None, ge=0, le=1)
     seat_number: Optional[int] = Field(default=None, ge=1, le=40)
 
@@ -256,7 +255,7 @@ def get_class_members(class_id: int, request: Request):
         is_teacher = (user["role"] in ("teacher", "admin") and class_row["teacher_id"] == user["user_id"])
 
         members = conn.execute("""
-            SELECT cm.student_id, cm.seat_number, cm.encrypted_note, cm.is_present, 
+            SELECT cm.student_id, cm.seat_number, cm.is_present, 
                    cm.traffic_light, cm.joined_at, u.handle, u.avatar_seed
             FROM class_members cm
             JOIN users u ON cm.student_id = u.id
@@ -275,9 +274,6 @@ def get_class_members(class_id: int, request: Request):
                 "handle": m["handle"],
                 "avatar_seed": m["avatar_seed"]
             }
-            # Только учитель получает зашифрованные заметки/ФИО
-            if is_teacher:
-                item["encrypted_note"] = m["encrypted_note"]
             result.append(item)
 
         return result
@@ -292,9 +288,6 @@ def update_member(class_id: int, student_id: int, req: UpdateMemberRequest, requ
 
         updates = []
         params = []
-        if req.encrypted_note is not None:
-            updates.append("encrypted_note = ?")
-            params.append(req.encrypted_note)
         if req.is_present is not None:
             updates.append("is_present = ?")
             params.append(req.is_present)
