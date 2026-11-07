@@ -9,6 +9,7 @@ from app.db import db_session
 from app.passport.middleware import require_user, require_teacher
 from app.passport.generator import generate_recovery_words, hash_secret
 from app.classroom.sse_hub import sse_hub
+from app.v1.rbac import get_course_role
 
 router = APIRouter(prefix="/api/classroom/classes", tags=["classes"])
 
@@ -287,7 +288,11 @@ def update_class_e2ee_keys(class_id: int, req: UpdateClassE2EEKeysRequest, reque
 @router.get("/{class_id}/members")
 def get_class_members(class_id: int, request: Request):
     user = require_user(request)
+    u_obj = {"id": user.get("user_id") or user.get("id"), "role": user.get("role")}
     with db_session() as conn:
+        if not get_course_role(conn, class_id, u_obj):
+            raise HTTPException(status_code=403, detail="Нет доступа к участникам курса")
+
         class_row = conn.execute("SELECT teacher_id FROM classes WHERE id = ?", (class_id,)).fetchone()
         if not class_row:
             raise HTTPException(status_code=404, detail="Класс не найден")
@@ -822,7 +827,11 @@ def get_student_summary(class_id: int, student_id: int, request: Request, filter
 @router.get("/{class_id}/material-sets")
 def list_material_sets(class_id: int, request: Request):
     user = require_user(request)
+    u_obj = {"id": user.get("user_id") or user.get("id"), "role": user.get("role")}
     with db_session() as conn:
+        if not get_course_role(conn, class_id, u_obj):
+            raise HTTPException(status_code=403, detail="Нет доступа к материалам курса")
+
         rows = conn.execute(
             "SELECT * FROM course_material_sets WHERE class_id = ? ORDER BY sort_order ASC, id ASC",
             (class_id,)

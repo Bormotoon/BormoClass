@@ -10,7 +10,7 @@ from fastapi import APIRouter, Request, Response, HTTPException, status, Query, 
 from pydantic import BaseModel, Field
 
 from app.db import db_session
-from app.passport.middleware import require_user
+from app.passport.middleware import require_user, require_teacher
 from app.classroom.sse_hub import sse_hub
 from app.passport.generator import create_unique_callsign
 from app.passport.pii_guard import assert_zero_pii_text
@@ -671,12 +671,36 @@ def get_audit_logs(
 # 6. ВЫГРУЗКА ДАННЫХ И IMS COMMON CARTRIDGE (Data Takeout)
 # -----------------------------------------------------------------------------
 
-def _generate_takeout_zip(conn) -> bytes:
-    classes_rows = conn.execute("SELECT id, title, subject_code, grade_level, course_state, created_at FROM classes").fetchall()
-    topics_rows = conn.execute("SELECT id, class_id, title FROM class_topics").fetchall()
-    coursework_rows = conn.execute("SELECT id, class_id, topic_id, kind, title, instructions, max_points, due_at, created_at FROM coursework").fetchall()
-    rubrics_rows = conn.execute("SELECT id, class_id, coursework_id, criteria_json, created_at FROM rubrics").fetchall()
-    submissions_rows = conn.execute("SELECT coursework_id, student_id, status, grade_points, grade_five, updated_at FROM submissions").fetchall()
+def _generate_takeout_zip(conn, teacher_id: Optional[int] = None) -> bytes:
+    if teacher_id is not None:
+        classes_rows = conn.execute(
+            "SELECT id, title, subject_code, grade_level, course_state, created_at FROM classes WHERE teacher_id = ? OR id IN (SELECT class_id FROM course_teachers WHERE teacher_id = ?)",
+            (teacher_id, teacher_id)
+        ).fetchall()
+        class_ids = [c["id"] for c in classes_rows]
+        if class_ids:
+            ph = ",".join("?" for _ in class_ids)
+            topics_rows = conn.execute(f"SELECT id, class_id, title FROM class_topics WHERE class_id IN ({ph})", class_ids).fetchall()
+            coursework_rows = conn.execute(f"SELECT id, class_id, topic_id, kind, title, instructions, max_points, due_at, created_at FROM coursework WHERE class_id IN ({ph})", class_ids).fetchall()
+            cw_ids = [cw["id"] for cw in coursework_rows]
+            if cw_ids:
+                cw_ph = ",".join("?" for _ in cw_ids)
+                rubrics_rows = conn.execute(f"SELECT id, class_id, coursework_id, criteria_json, created_at FROM rubrics WHERE coursework_id IN ({cw_ph})", cw_ids).fetchall()
+                submissions_rows = conn.execute(f"SELECT coursework_id, student_id, status, grade_points, grade_five, updated_at FROM submissions WHERE coursework_id IN ({cw_ph})", cw_ids).fetchall()
+            else:
+                rubrics_rows = []
+                submissions_rows = []
+        else:
+            topics_rows = []
+            coursework_rows = []
+            rubrics_rows = []
+            submissions_rows = []
+    else:
+        classes_rows = conn.execute("SELECT id, title, subject_code, grade_level, course_state, created_at FROM classes").fetchall()
+        topics_rows = conn.execute("SELECT id, class_id, title FROM class_topics").fetchall()
+        coursework_rows = conn.execute("SELECT id, class_id, topic_id, kind, title, instructions, max_points, due_at, created_at FROM coursework").fetchall()
+        rubrics_rows = conn.execute("SELECT id, class_id, coursework_id, criteria_json, created_at FROM rubrics").fetchall()
+        submissions_rows = conn.execute("SELECT coursework_id, student_id, status, grade_points, grade_five, updated_at FROM submissions").fetchall()
 
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -689,12 +713,22 @@ def _generate_takeout_zip(conn) -> bytes:
 
     return buf.getvalue()
 
-@router.get("/api/classroom/takeout.zip")
 @router.get("/api/classroom/admin/takeout.zip")
-def export_takeout_zip(request: Request):
-    require_user(request)
+def export_admin_takeout_zip(request: Request):
+    require_admin(request)
     with db_session() as conn:
-        zip_bytes = _generate_takeout_zip(conn)
+        zip_bytes = _generate_takeout_zip(conn, teacher_id=None)
+        return Response(
+            content=zip_bytes,
+            media_type="application/zip",
+            headers={"Content-Disposition": "attachment; filename=bormoclass-admin-takeout.zip"}
+        )
+
+@router.get("/api/classroom/takeout.zip")
+def export_teacher_takeout_zip(request: Request):
+    user = require_teacher(request)
+    with db_session() as conn:
+        zip_bytes = _generate_takeout_zip(conn, teacher_id=user["user_id"])
         return Response(
             content=zip_bytes,
             media_type="application/zip",

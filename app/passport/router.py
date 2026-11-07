@@ -1,5 +1,6 @@
 import time
 import secrets
+import json
 from typing import Optional, List
 from fastapi import APIRouter, Request, Response, HTTPException, status
 from pydantic import BaseModel, Field
@@ -23,7 +24,7 @@ from app.passport.crypto import (
     code_hash,
     RateLimiter
 )
-from app.passport.crypto_cookie import sign_cookie_payload
+from app.passport.crypto_cookie import sign_cookie_payload, _b64url_encode
 from app.passport.recess import (
     spend_recess_seconds,
     award_recess_seconds,
@@ -130,10 +131,35 @@ def _set_auth_cookie(response: Response, user_data: dict) -> None:
     }
     token = sign_cookie_payload(payload, ttl_seconds=ttl)
     cookie_domain = settings.COOKIE_DOMAIN or None
-    # httponly=False позволяет клиенту pb-passport.js читать профиль и героя мгновенно
+    # Основная авторизационная кука с HttpOnly=True
     response.set_cookie(
         key=settings.COOKIE_NAME,
         value=token,
+        httponly=True,
+        samesite="lax",
+        secure=False,
+        domain=cookie_domain,
+        max_age=ttl
+    )
+    # Несекретная UI-кука (HttpOnly=False) для быстрого чтения профиля клиентом
+    ui_payload = {
+        "id": uid,
+        "uid": uid,
+        "handle": handle,
+        "h": handle,
+        "role": role,
+        "avatar_seed": seed,
+        "seed": seed,
+        "recess_seconds": recess_bal,
+        "rec_bal": recess_bal,
+        "pro": pro,
+        "cid": cid,
+        "exp": exp
+    }
+    ui_json = json.dumps(ui_payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    response.set_cookie(
+        key="pb_pass_ui",
+        value=_b64url_encode(ui_json),
         httponly=False,
         samesite="lax",
         secure=False,
@@ -145,6 +171,12 @@ def _clear_auth_cookie(response: Response) -> None:
     cookie_domain = settings.COOKIE_DOMAIN or None
     response.delete_cookie(
         key=settings.COOKIE_NAME,
+        domain=cookie_domain,
+        httponly=True,
+        samesite="lax"
+    )
+    response.delete_cookie(
+        key="pb_pass_ui",
         domain=cookie_domain,
         httponly=False,
         samesite="lax"
@@ -253,6 +285,18 @@ def register(req: RegisterRequest, response: Response):
         handle = None
         if req.handle:
             candidate = canon_handle(req.handle)
+            if not is_valid_dictionary_handle(candidate):
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Позывной должен состоять из слов официального словаря Паспорта (Прилагательное-Существительное-Код)."
+                )
+            if req.ticket:
+                payload, err = check_ticket(settings.SECRET_KEY.encode("utf-8"), req.ticket, time.time(), min_age=0)
+                if not payload:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Талон недействителен или просрочен"
+                    )
             # Проверка уникальности
             existing = conn.execute("SELECT 1 FROM users WHERE handle = ?", (candidate,)).fetchone()
             if existing:
@@ -262,6 +306,13 @@ def register(req: RegisterRequest, response: Response):
                 )
             handle = candidate
         else:
+            if req.ticket:
+                payload, err = check_ticket(settings.SECRET_KEY.encode("utf-8"), req.ticket, time.time(), min_age=0)
+                if not payload:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Талон недействителен или просрочен"
+                    )
             handle = create_unique_callsign(conn)
 
         recovery_words = pick_recovery_words(4)
@@ -423,8 +474,16 @@ def login(req: LoginRequest, response: Response):
 @router.post("/recover")
 def recover_password(req: RecoverRequest, response: Response):
     handle = canon_handle(req.handle)
+    limiter_key = f"recover:{handle}"
+    if limiter.blocked(limiter_key, limit=5, window=900):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Слишком много попыток восстановления. Подождите 15 минут."
+        )
+
     words_input = req.recovery_words or req.words
     if not words_input or len(words_input) != 4:
+        limiter.hit(limiter_key, 900)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Необходимо указать ровно 4 секретных слова восстановления"
@@ -440,11 +499,13 @@ def recover_password(req: RecoverRequest, response: Response):
         ).fetchone()
 
         if not row or not verify_secret(recovery_text, row["recovery_words_hash"]):
+            limiter.hit(limiter_key, 900)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Неверные секретные слова восстановления"
             )
 
+        limiter.reset(limiter_key)
         new_hash = hash_secret(req.new_password)
         up_cols = ["password_hash = ?"]
         up_params = [new_hash]

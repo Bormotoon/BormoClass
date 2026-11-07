@@ -11,6 +11,7 @@ from app.passport.middleware import require_user, require_teacher
 from app.passport.recess import award_recess_seconds
 from app.classroom.sse_hub import sse_hub
 from app.passport.pii_guard import assert_e2ee_text
+from app.v1.rbac import get_course_role
 
 router = APIRouter(prefix="/api/classroom", tags=["submissions"])
 
@@ -300,8 +301,13 @@ def calculate_sou_metrics(grades: List[int]) -> Dict[str, Any]:
 
 @router.get("/classes/{class_id}/analytics")
 def get_class_analytics(class_id: int, request: Request, coursework_id: Optional[int] = None):
-    require_user(request)
+    user = require_user(request)
+    u_obj = {"id": user.get("user_id") or user.get("id"), "role": user.get("role")}
     with db_session() as conn:
+        role = get_course_role(conn, class_id, u_obj)
+        if not role:
+            raise HTTPException(status_code=403, detail="Нет доступа к аналитике класса")
+
         if coursework_id:
             rows = conn.execute("""
                 SELECT s.grade_five
@@ -323,9 +329,14 @@ def get_class_analytics(class_id: int, request: Request, coursework_id: Optional
 @router.get("/classes/{class_id}/matrix")
 def get_class_matrix(class_id: int, request: Request):
     user = require_user(request)
-    is_teacher = user["role"] in ("teacher", "admin")
+    u_id = user.get("user_id") or user.get("id")
+    u_obj = {"id": u_id, "role": user.get("role")}
 
     with db_session() as conn:
+        role = get_course_role(conn, class_id, u_obj)
+        if not role:
+            raise HTTPException(status_code=403, detail="Нет доступа к матрице оценок")
+
         class_row = conn.execute("SELECT teacher_id FROM classes WHERE id = ?", (class_id,)).fetchone()
         if not class_row:
             raise HTTPException(status_code=404, detail="Класс не найден")
@@ -365,6 +376,12 @@ def get_class_matrix(class_id: int, request: Request):
 
         subs_map = {f"{s['coursework_id']}_{s['student_id']}": dict(s) for s in subs}
         all_grades = [s["grade_five"] for s in subs if s["grade_five"] in (2, 3, 4, 5)]
+
+        if role == "STUDENT":
+            students_list = [s for s in students_list if s["student_id"] == u_id]
+            subs_map = {k: v for k, v in subs_map.items() if v.get("student_id") == u_id}
+            all_grades = [s["grade_five"] for s in subs if s["student_id"] == u_id and s["grade_five"] in (2, 3, 4, 5)]
+
         summary_analytics = calculate_sou_metrics(all_grades)
 
         return {
@@ -573,13 +590,20 @@ def set_submission_excused(cw_id: int, student_id: int, req: ExcuseRequest, requ
 @router.get("/classes/{class_id}/gradebook")
 def get_gradebook(class_id: int, request: Request, grading_period_id: Optional[int] = None):
     user = require_user(request)
-    is_teacher = user["role"] in ("teacher", "admin")
+    u_id = user.get("user_id") or user.get("id")
+    u_obj = {"id": u_id, "role": user.get("role")}
 
     with db_session() as conn:
+        role = get_course_role(conn, class_id, u_obj)
+        if not role:
+            raise HTTPException(status_code=403, detail="Нет доступа к журналу оценок")
+
         class_row = conn.execute("SELECT * FROM classes WHERE id = ?", (class_id,)).fetchone()
         if not class_row:
             raise HTTPException(status_code=404, detail="Класс не найден")
         class_dict = dict(class_row)
+
+        is_teacher = role in ("OWNER", "TEACHER", "ADMIN")
 
         grade_calc_type = class_dict.get("grade_calc_type") or "TOTAL_POINTS"
         grade_display_setting = class_dict.get("grade_display_setting") or "SHOW_OVERALL_GRADE"
@@ -621,6 +645,10 @@ def get_gradebook(class_id: int, request: Request, grading_period_id: Optional[i
             """, cw_ids).fetchall()
             for s in sub_rows:
                 subs_map[(s["coursework_id"], s["student_id"])] = dict(s)
+
+        if role == "STUDENT":
+            members = [m for m in members if m["student_id"] == u_id]
+            subs_map = {k: v for k, v in subs_map.items() if k[1] == u_id}
 
         # 5. Расчет средних по каждому заданию
         cw_averages = {}
