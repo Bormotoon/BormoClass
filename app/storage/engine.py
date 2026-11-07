@@ -266,6 +266,7 @@ def ensure_student_copy(conn: sqlite3.Connection, coursework_row: Any, student_i
             file_kind = template_row["file_kind"]
             ext = Path(template_row["file_title"]).suffix.lstrip(".") or "bin"
 
+        new_file_id = f"file_{secrets.token_hex(8)}"
         new_file_title = f"Вложение #{new_sha[:8]}.{ext}"
 
         conn.execute("""

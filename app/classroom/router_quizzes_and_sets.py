@@ -629,7 +629,7 @@ def run_originality_check(cw_id: int, req: OriginalityCheckRequest, request: Req
                 (cw_id, student_id)
             ).fetchone()
             if sub:
-                text_to_check = sub.get("payload_json") or ""
+                text_to_check = dict(sub).get("payload_json") or ""
 
         if not text_to_check or len(text_to_check.strip()) < 10:
             return {"ok": True, "match_percent": 0.0, "matches": []}
@@ -647,7 +647,7 @@ def run_originality_check(cw_id: int, req: OriginalityCheckRequest, request: Req
         is_code = "def " in text_to_check or "class " in text_to_check or "import " in text_to_check
 
         for os in other_subs:
-            other_text = os.get("payload_json") or ""
+            other_text = dict(os).get("payload_json") or ""
             if not other_text:
                 continue
 

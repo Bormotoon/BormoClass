@@ -634,7 +634,7 @@ def copy_class(class_id: int, request: Request, req: Optional[CopyClassRequest] 
                 (
                     new_class_id, new_top_id, cw["kind"], cw["title"], cw["instructions"], cw["attachments_json"],
                     cw["rubric_json"], cw["max_points"], cw["recess_reward"], cw["is_homework"],
-                    user["user_id"], cw["creator_client_id"],
+                    uid, cw["creator_client_id"],
                     cw["work_type"], cw["modification_mode"], new_cat_id,
                     cw["choices_json"], cw["peer_replies_enabled"], cw["show_class_summary"],
                     cw["close_after_due"], cw["originality_enabled"], cw["sort_order"],
@@ -677,7 +677,7 @@ def copy_class(class_id: int, request: Request, req: Optional[CopyClassRequest] 
                     learning_goals_json, sort_order, scheduled_at, created_at, updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, 'DRAFT', 'ALL_STUDENTS', '[]', ?, ?, NULL, ?, ?)""",
                 (
-                    new_class_id, new_top_id, user["user_id"], m["creator_client_id"], m["title"],
+                    new_class_id, new_top_id, uid, m["creator_client_id"], m["title"],
                     m["description"], m["materials_json"], m["learning_goals_json"], m["sort_order"], now, now
                 )
             )
