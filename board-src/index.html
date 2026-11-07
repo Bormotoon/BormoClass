@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <!-- user-scalable=no намеренно: масштаб на доске делает сам холст (щипок,
+         колесо, кнопки внизу слева). Без запрета браузер перехватывал бы щипок
+         на себя и вместо приближения рисунка растягивал бы страницу с панелями. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="description" content="Интерактивная доска для урока: рисование от руки, фигуры, стрелки, текст, картинки. Работает в браузере, ничего устанавливать не нужно." />
+    <title>Интерактивная доска — педобраз.рф</title>
+
+    <!-- ⚠️ ГЛАВНАЯ ГРАБЛЯ ВСЕЙ СБОРКИ. Шрифты рисунка (Excalifont, Nunito,
+         Cascadia и ещё пять наборов) библиотека грузит не тегом, а сама через
+         fetch — и адрес берёт из window.EXCALIDRAW_ASSET_PATH. Если его не
+         задать, работает зашитый в код запасной путь: https://esm.sh/…, то есть
+         каждый посетитель уходил бы за шрифтами на чужой CDN. Задаём свой.
+
+         Почему через document.baseURI, а не строкой "/": normalizeBaseUrl
+         внутри библиотеки достраивает относительный путь к location.origin,
+         теряя префикс. Приложение живёт на app.педобраз.рф/board/, а Caddy
+         префикс срезает — из строки "./" вышел бы origin без /board/, и шрифты
+         посыпались бы в 404 → и оттуда в тот же esm.sh (запасной путь
+         добавляется в список ВСЕГДА, последним). Абсолютный адрес библиотека
+         не трогает. Второй рубеж — CSP в nginx.conf: connect-src 'self'.  -->
+    <script>
+      window.EXCALIDRAW_ASSET_PATH = new URL("./", document.baseURI).href;
+    </script>
+
+    <style>
+      html, body, #app, .pb-stage { margin: 0; height: 100%; }
+      /* Холст рисуют мышью и пальцем — выделение текста на панелях только мешает. */
+      body { overscroll-behavior: none; }
+      .pb-boot {
+        display: flex; align-items: center; justify-content: center; height: 100%;
+        font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"><div class="pb-boot">Загружаем доску…</div></div>
+    <script type="module" src="./src/main.jsx"></script>
+  </body>
+</html>

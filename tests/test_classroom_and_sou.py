@@ -229,7 +229,7 @@ def test_pages_served_cleanly(client):
     assert idx_resp.status_code == 200
     assert "BormoClass" in idx_resp.text
 
-    # Проверка раздачи интерактивной доски board.html
+    # Проверка раздачи интерактивной доски Excalidraw
     brd_resp = client.get("/board/1")
     assert brd_resp.status_code == 200
-    assert "boardCanvas" in brd_resp.text
+    assert "EXCALIDRAW" in brd_resp.text or "excalidraw" in brd_resp.text.lower()

@@ -1,129 +1,81 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>BormoClass — Интерактивная школьная доска</title>
-  <link rel="stylesheet" href="/static/css/md3-tokens.css">
-  <link rel="stylesheet" href="/static/css/board.css">
-</head>
-<body>
-  <div class="board-container">
-    <!-- Top Interactive Toolbar -->
-    <header class="board-header">
-      <!-- Group 1: Navigation & Slides -->
-      <div class="board-tool-group">
-        <button class="board-btn" id="boardBackBtn" title="Вернуться в класс">← Класс</button>
-        <button class="board-btn" id="prevSlideBtn" title="Предыдущий слайд">◀</button>
-        <span id="slideIndicator" style="font-weight: 700; padding: 0 0.5rem;">Слайд 1 / 1</span>
-        <button class="board-btn" id="nextSlideBtn" title="Следующий слайд">▶</button>
-        <button class="board-btn" id="addSlideBtn" title="Добавить слайд">+</button>
-      </div>
+  <head>
+    <meta charset="utf-8" />
+    <base href="/static/board/" />
+    <!-- user-scalable=no намеренно: масштаб на доске делает сам холст (щипок,
+         колесо, кнопки внизу слева). Без запрета браузер перехватывал бы щипок
+         на себя и вместо приближения рисунка растягивал бы страницу с панелями. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="description" content="Интерактивная школьная доска BormoClass (Excalidraw): рисование от руки, фигуры, стрелки, текст, картинки. Работает в браузере со строгим Zero-PII." />
+    <title>Интерактивная доска — BormoClass</title>
 
-      <!-- Group 2: Drawing Tools & Colors -->
-      <div class="board-tool-group">
-        <button class="board-btn active" data-tool="pen" id="toolPen" title="Маркер">Маркер</button>
-        <button class="board-btn" data-tool="highlighter" id="toolHighlighter" title="Выделитель">Выделитель</button>
-        <button class="board-btn" data-tool="eraser" id="toolEraser" title="Ластик">Ластик</button>
-        <button class="board-btn" data-tool="line" id="toolLine" title="Прямая линия">Линия</button>
-        <button class="board-btn" data-tool="rect" id="toolRect" title="Прямоугольник">Фигура</button>
-        <button class="board-btn" data-tool="axes" id="toolAxes" title="Координатная ось">Оси</button>
+    <!-- Шрифты рисунка (Excalifont, Nunito, Cascadia и др.) библиотека грузит
+         через fetch по window.EXCALIDRAW_ASSET_PATH. Раздаются локально без внешних CDN. -->
+    <script>
+      window.EXCALIDRAW_ASSET_PATH = new URL("./", document.baseURI).href;
+    </script>
 
-        <!-- Color pickers -->
-        <button class="board-btn active" data-color="#1c1b1f" title="Черный" style="padding: 0 8px;">
-          <div class="color-dot" style="background: #1c1b1f;"></div>
-        </button>
-        <button class="board-btn" data-color="#f57300" title="Оранжевый (Ember)" style="padding: 0 8px;">
-          <div class="color-dot" style="background: #f57300;"></div>
-        </button>
-        <button class="board-btn" data-color="#1565c0" title="Синий" style="padding: 0 8px;">
-          <div class="color-dot" style="background: #1565c0;"></div>
-        </button>
-        <button class="board-btn" data-color="#2e7d32" title="Зеленый" style="padding: 0 8px;">
-          <div class="color-dot" style="background: #2e7d32;"></div>
-        </button>
+    <style>
+      html, body, #app, .pb-stage { margin: 0; height: 100%; }
+      body { overscroll-behavior: none; }
+      .pb-boot {
+        display: flex; align-items: center; justify-content: center; height: 100%;
+        font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #666;
+      }
+      .bc-back-btn {
+        position: fixed;
+        top: 12px;
+        left: 56px;
+        z-index: 10;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 14px;
+        background: var(--island-bg-color, #ffffff);
+        color: var(--text-primary-color, #1b1b1f);
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: 10px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+        font: 600 13px system-ui, -apple-system, sans-serif;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.15s, transform 0.1s;
+      }
+      .bc-back-btn:hover {
+        background: #f5f5f5;
+        transform: translateY(-1px);
+      }
+      .bc-back-btn:active {
+        transform: translateY(0);
+      }
+    </style>
+    <script type="module" crossorigin src="./assets/index-CyasA8SH.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-D0jcgTwT.css">
+  </head>
+  <body>
+    <button type="button" class="bc-back-btn" id="bcBackBtn" title="Вернуться в BormoClass">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m15 18-6-6 6-6"/>
+      </svg>
+      <span>В класс</span>
+    </button>
+    <div id="app"><div class="pb-boot">Загружаем интерактивную доску Excalidraw…</div></div>
 
-        <button class="board-btn" id="undoBtn" title="Отменить">Отмена</button>
-        <button class="board-btn" id="redoBtn" title="Повторить">Повтор</button>
-        <button class="board-btn" id="clearBtn" title="Очистить слайд">Очистить</button>
-      </div>
-
-      <!-- Group 3: Grids -->
-      <div class="board-tool-group">
-        <select class="board-btn" id="gridSelect" title="Сетка фона">
-          <option value="grid-squared">Тетрадная клетка</option>
-          <option value="grid-ruled">Широкая линейка</option>
-          <option value="grid-plain">Чистый лист</option>
-          <option value="grid-axes">Координатная сетка</option>
-          <option value="grid-graphite">Графитовая доска</option>
-        </select>
-      </div>
-
-      <!-- Group 4: Classroom Control Widgets -->
-      <div class="board-tool-group">
-        <!-- Widget 1: QR & PIN -->
-        <button class="board-btn" id="qrOverlayBtn" title="Показать QR-код и пин на весь экран">QR & Пин</button>
-
-        <!-- Widget 2: Call Wheel -->
-        <button class="board-btn" id="wheelBtn" title="Колесо вызова к доске">К доске</button>
-
-        <!-- Widget 3: Traffic Light Summary -->
-        <div class="traffic-summary-pill" id="trafficSummaryPill" title="Светофор понимания (🟢 Понятно, 🟡 Вопрос, 🔴 Нужна помощь)">
-          <div class="traffic-slice green" id="sliceGreen" style="width: 100%;">0</div>
-          <div class="traffic-slice yellow" id="sliceYellow" style="width: 0%;">0</div>
-          <div class="traffic-slice red" id="sliceRed" style="width: 0%;">0</div>
-        </div>
-
-        <!-- Widget 4: SanPiN Screen Timer -->
-        <button class="board-btn" id="sanpinBtn" title="Таймер СанПиН 1.2.3685-21">
-          ⏱ <span id="sanpinDisplay">30:00</span>
-        </button>
-
-        <!-- Widget 5: Recess Lock -->
-        <button class="board-btn" id="recessLockBtn" title="Блокировка перемены на контрольную">
-          🔒 Контрольная
-        </button>
-      </div>
-    </header>
-
-    <!-- Canvas Drawing Viewport -->
-    <main class="canvas-wrapper grid-squared" id="canvasWrapper">
-      <canvas id="boardCanvas"></canvas>
-    </main>
-
-    <!-- QR & PIN Fullscreen Overlay -->
-    <div class="qr-modal" id="qrModal" style="display: none;">
-      <div class="qr-card">
-        <h2>Подключение к уроку</h2>
-        <div id="qrCodeContainer"></div>
-        <div class="qr-pin-display" id="qrPinText">-----</div>
-        <p>Откройте платформу или сканируйте QR и выберите свою парту (1..40)</p>
-        <p><strong>Подключено парт: <span id="connectedDesksCount">0</span></strong></p>
-        <button class="board-btn" id="closeQrBtn" style="width: 100%; margin-top: 1rem;">Закрыть</button>
-      </div>
-    </div>
-
-    <!-- Smart Call Wheel Modal -->
-    <div class="wheel-modal" id="wheelModal" style="display: none;">
-      <div class="wheel-card">
-        <h2>Вызов к доске</h2>
-        <p>Случайный выбор из присутствующих учеников</p>
-        <div class="wheel-candidate-slot" id="wheelCandidateSlot">Нажмите «Крутить»</div>
-        <div style="display: flex; gap: 1rem; justify-content: center;">
-          <button class="board-btn active" id="spinWheelBtn" style="padding: 0.75rem 2rem;">Крутить</button>
-          <button class="board-btn" id="closeWheelBtn">Закрыть</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- SanPiN Expiration Warning -->
-    <div class="sanpin-banner" id="sanpinBanner" style="display: none;">
-      <span>⚠️ Время непрерывной работы с экраном по нормам СанПиН истекло! Сделайте гимнастику для глаз.</span>
-      <button class="board-btn" id="dismissSanpinBtn" style="background: white; color: black;">OK</button>
-    </div>
-  </div>
-
-  <script src="/static/js/pb-passport-bridge.js"></script>
-  <script type="module" src="/static/js/board-app.js"></script>
-</body>
+    <script>
+      document.getElementById("bcBackBtn").addEventListener("click", () => {
+        const parts = window.location.pathname.split("/").filter(Boolean);
+        const last = parts[parts.length - 1];
+        const cid = Number(last);
+        if (cid && !isNaN(cid)) {
+          window.location.href = "/#class/" + cid;
+        } else if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.href = "/";
+        }
+      });
+    </script>
+  </body>
 </html>

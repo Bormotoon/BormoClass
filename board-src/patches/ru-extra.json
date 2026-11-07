@@ -1,0 +1,144 @@
+{
+  "_comment": "Строки интерфейса, которых нет в русском словаре апстрима (56 штук на версии 0.18.1). Без них редактор молча показывает английский: так на снимке лендинга оказалась подсказка «Нажмите Enter для добавления текста. Hold Ctrl and Arrow key to create a flowchart». Структура повторяет словарь апстрима: patches/translate-ru.mjs сливает это в него по ключам.",
+
+  "labels": {
+    "arrowhead_crowfoot_many": "Гусиная лапка (много)",
+    "arrowhead_crowfoot_one": "Гусиная лапка (один)",
+    "arrowhead_crowfoot_one_or_many": "Гусиная лапка (один или много)",
+    "arrowtypes": "Вид стрелки",
+    "arrowtype_sharp": "Прямая стрелка",
+    "arrowtype_round": "Скруглённая стрелка",
+    "arrowtype_elbowed": "Ступенчатая стрелка",
+    "autoResize": "Подгонять рамку под текст",
+    "changeStroke": "Изменить цвет обводки",
+    "changeBackground": "Изменить цвет фона",
+    "clearCanvas": "Очистить холст",
+    "copyElementLink": "Скопировать ссылку на объект",
+    "discordChat": "Чат в Discord",
+    "editArrow": "Изменить стрелку",
+    "followUs": "Мы в соцсетях",
+    "goToElement": "Перейти к объекту",
+    "hint": "Введите или вставьте ссылку",
+    "imageCropping": "Обрезка изображения",
+    "installPWA": "Установить приложение на устройство",
+    "linkToElement": "Ссылка на объект",
+    "loadScene": "Открыть из файла",
+    "more_options": "Ещё",
+    "showFonts": "Выбрать шрифт",
+    "theme": "Тема оформления",
+    "toggleGrid": "Показать сетку",
+    "unCroppedDimension": "Размер до обрезки",
+    "wrapSelectionInFrame": "Заключить выделенное в рамку",
+    "zoomToFit": "Вписать всё в экран",
+    "zoomToFitSelection": "Вписать выделенное",
+    "zoomToFitViewport": "Вписать в окно"
+  },
+
+  "hints": {
+    "arrowTool": "Щёлкайте, чтобы вести ломаную, или тяните — для одной линии. Нажмите {{arrowShortcut}} ещё раз, чтобы сменить вид стрелки.",
+    "createFlowchart": "Удерживайте Ctrl и стрелку на клавиатуре, чтобы собрать блок-схему",
+    "dismissSearch": "Escape — закрыть поиск",
+    "enterCropEditor": "Двойной щелчок по изображению или Enter — обрезать",
+    "leaveCropEditor": "Щелчок вне изображения, Enter или Escape — закончить обрезку"
+  },
+
+  "helpDialog": {
+    "createFlowchart": "Собрать блок-схему из обычной фигуры",
+    "navigateFlowchart": "Переходить по блок-схеме",
+    "cropStart": "Обрезать изображение",
+    "cropFinish": "Закончить обрезку"
+  },
+
+  "buttons": {
+    "copyLink": "Скопировать ссылку",
+    "systemMode": "Как в системе"
+  },
+
+  "errors": {
+    "saveLibraryError": "Не удалось сохранить библиотеку в памяти браузера. Сохраните её файлом, чтобы не потерять заготовки."
+  },
+
+  "stats": {
+    "fullTitle": "Свойства холста и фигуры",
+    "generalStats": "Общие",
+    "elementProperties": "Свойства фигуры",
+    "shapes": "Фигуры"
+  },
+
+  "toast": {
+    "elementLinkCopied": "Ссылка скопирована в буфер обмена"
+  },
+
+  "element": {
+    "rectangle": "Прямоугольник",
+    "diamond": "Ромб",
+    "ellipse": "Эллипс",
+    "arrow": "Стрелка",
+    "line": "Линия",
+    "freedraw": "Рисунок от руки",
+    "text": "Текст",
+    "image": "Изображение",
+    "group": "Группа",
+    "frame": "Рамка",
+    "magicframe": "Каркас в код",
+    "embeddable": "Веб-вставка",
+    "selection": "Выделение",
+    "iframe": "Встроенная страница"
+  },
+
+  "elementLink": {
+    "title": "Ссылка на объект",
+    "desc": "Щёлкните по фигуре на холсте или вставьте ссылку.",
+    "notFound": "Объект по этой ссылке на холсте не найден."
+  },
+
+  "search": {
+    "title": "Найти на холсте",
+    "noMatch": "Ничего не найдено…",
+    "singleResult": "совпадение",
+    "multipleResults": "совпадений",
+    "placeholder": "Найти текст на холсте…"
+  },
+
+  "quickSearch": {
+    "placeholder": "Быстрый поиск"
+  },
+
+  "commandPalette": {
+    "title": "Палитра команд",
+    "shortcuts": {
+      "select": "Выбрать",
+      "confirm": "Подтвердить",
+      "close": "Закрыть"
+    },
+    "recents": "Недавние",
+    "search": {
+      "placeholder": "Поиск по меню и командам",
+      "noMatch": "Команд не найдено…"
+    },
+    "itemNotAvailable": "Команда сейчас недоступна…",
+    "shortcutHint": "Палитра команд — {{shortcut}}"
+  },
+
+  "fontList": {
+    "badge": { "old": "старый" },
+    "sceneFonts": "В этом рисунке",
+    "availableFonts": "Доступные шрифты",
+    "empty": "Шрифты не найдены"
+  },
+
+  "shareDialog": {
+    "or": "или"
+  },
+
+  "userList": {
+    "empty": "Никого нет",
+    "hint": {
+      "text": "Щёлкните по участнику, чтобы следовать за ним",
+      "followStatus": "Вы следуете за этим участником",
+      "inCall": "Участник в голосовом звонке",
+      "micMuted": "Микрофон участника выключен",
+      "isSpeaking": "Участник говорит"
+    }
+  }
+}

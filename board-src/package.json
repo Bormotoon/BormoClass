@@ -1,0 +1,20 @@
+{
+  "name": "pedobraz-board",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Интерактивная доска app.педобраз.рф — тонкая обёртка вокруг @excalidraw/excalidraw",
+  "license": "MIT",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@excalidraw/excalidraw": "0.18.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "4.7.0",
+    "vite": "6.4.3"
+  }
+}
