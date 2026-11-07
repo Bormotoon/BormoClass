@@ -5,7 +5,7 @@
  * Zero external CDN dependencies. Zero-PII compliant.
  */
 
-import { v1Fetch } from "./api-v1.js";
+import { v1Fetch, escapeHtml } from "./api-v1.js";
 
 /**
  * Deterministic color palette for course banners
@@ -210,7 +210,7 @@ export class DrawerNav {
                 ${teachingCourses.map(c => `
                   <a href="#class/${c.id}" class="drawer-course-item ${currentHash === `#class/${c.id}` ? "active" : ""}" data-route="class/${c.id}">
                     <span class="drawer-course-dot" style="background: ${c.theme_color || '#1a73e8'};"></span>
-                    <span class="drawer-course-name" title="${c.name}">${c.name}</span>
+                    <span class="drawer-course-name" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</span>
                   </a>
                 `).join("")}
                 ${teachingCourses.length === 0 ? `<div class="drawer-empty-hint">Нет активных курсов</div>` : ""}
@@ -231,7 +231,7 @@ export class DrawerNav {
                 ${enrolledCourses.map(c => `
                   <a href="#class/${c.id}" class="drawer-course-item ${currentHash === `#class/${c.id}` ? "active" : ""}" data-route="class/${c.id}">
                     <span class="drawer-course-dot" style="background: ${c.theme_color || '#188038'};"></span>
-                    <span class="drawer-course-name" title="${c.name}">${c.name}</span>
+                    <span class="drawer-course-name" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</span>
                   </a>
                 `).join("")}
                 ${enrolledCourses.length === 0 ? `<div class="drawer-empty-hint">Вы еще не записаны на курсы</div>` : ""}
@@ -318,7 +318,7 @@ export function renderCoursesShowcase(container, courses = [], options = {}) {
         ${invitations.map(inv => `
           <div class="invitation-card" data-inv-id="${inv.id}">
             <div class="inv-card-info">
-              <div class="inv-course-name">${inv.course_name || "Курс #" + inv.course_id}</div>
+              <div class="inv-course-name">${escapeHtml(inv.course_name || "Курс #" + inv.course_id)}</div>
               <div class="inv-role-text">Роль: ${inv.role === "TEACHER" ? "Преподаватель" : "Учащийся"}</div>
             </div>
             <div class="inv-card-actions">
@@ -384,11 +384,11 @@ export function renderCoursesShowcase(container, courses = [], options = {}) {
         <div class="banner-svg-container">${bannerSvg}</div>
         <div class="course-header-content">
           <div class="course-title-row">
-            <h3 class="course-title" title="${c.name || 'Курс'}">${c.name || 'Без названия'}</h3>
+            <h3 class="course-title" title="${escapeHtml(c.name || 'Курс')}">${escapeHtml(c.name || 'Без названия')}</h3>
             <button class="card-menu-btn" data-id="${c.id}" aria-label="Меню курса">⋮</button>
           </div>
-          <div class="course-section-row">${c.section || c.subject || ""} ${c.room ? `· Каб. ${c.room}` : ""}</div>
-          <div class="course-owner-row">${c.owner_handle || "Преподаватель"}</div>
+          <div class="course-section-row">${escapeHtml(c.section || c.subject || "")} ${c.room ? `· Каб. ${escapeHtml(c.room)}` : ""}</div>
+          <div class="course-owner-row">${escapeHtml(c.owner_handle || "Преподаватель")}</div>
         </div>
         <div class="course-owner-avatar">${ownerAvatarSvg}</div>
       </div>
@@ -408,10 +408,10 @@ export function renderCoursesShowcase(container, courses = [], options = {}) {
           ${deadlines.length > 0 ? `
             <div class="deadlines-title">Срок сдачи:</div>
             ${deadlines.map(d => `
-              <div class="deadline-item" title="${d.title}">
+              <div class="deadline-item" title="${escapeHtml(d.title)}">
                 <span class="deadline-bullet">⏰</span>
-                <span class="deadline-due">${d.due_label || 'Скоро'}:</span>
-                <span class="deadline-name">${d.title}</span>
+                <span class="deadline-due">${escapeHtml(d.due_label || 'Скоро')}:</span>
+                <span class="deadline-name">${escapeHtml(d.title)}</span>
               </div>
             `).join("")}
           ` : `

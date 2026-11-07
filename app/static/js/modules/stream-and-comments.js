@@ -5,7 +5,7 @@
  * Zero external CDN dependencies. Zero-PII compliant.
  */
 
-import { v1Fetch } from "./api-v1.js";
+import { v1Fetch, escapeHtml } from "./api-v1.js";
 import { getUserSvgAvatar, getCourseBannerSvg } from "./home-and-drawer.js";
 
 /**
@@ -147,7 +147,7 @@ export function showProjectorModal(enrollmentCode, courseName = "") {
   modalOverlay.innerHTML = `
     <div class="projector-card">
       <button class="projector-close-btn" id="closeProjectorBtn">&times;</button>
-      <div class="projector-course-title">${courseName || "Присоединение к курсу"}</div>
+      <div class="projector-course-title">${escapeHtml(courseName || "Присоединение к курсу")}</div>
       <div class="projector-hint">Откройте BormoClass на планшете/смартфоне или введите код:</div>
       <div class="projector-code-display" id="projectorBigCode" title="Кликните, чтобы скопировать">${enrollmentCode || "------"}</div>
       <div class="projector-qr-wrapper">
@@ -190,11 +190,11 @@ export function renderStreamHeader(container, course = {}, user = null, options 
     <div class="stream-banner" style="background-color: ${themeColor};">
       <div class="stream-banner-svg">${bannerSvg}</div>
       <div class="stream-banner-info">
-        <h1 class="stream-course-title">${course.name || "Курс"}</h1>
+        <h1 class="stream-course-title">${escapeHtml(course.name || "Курс")}</h1>
         <div class="stream-course-meta">
-          ${course.section ? `<span class="meta-item">${course.section}</span>` : ""}
-          ${course.subject ? `<span class="meta-item">· ${course.subject}</span>` : ""}
-          ${course.room ? `<span class="meta-item">· Каб. ${course.room}</span>` : ""}
+          ${course.section ? `<span class="meta-item">${escapeHtml(course.section)}</span>` : ""}
+          ${course.subject ? `<span class="meta-item">· ${escapeHtml(course.subject)}</span>` : ""}
+          ${course.room ? `<span class="meta-item">· Каб. ${escapeHtml(course.room)}</span>` : ""}
         </div>
       </div>
 
@@ -261,14 +261,14 @@ export function openAboutCourseModal(course) {
   overlay.innerHTML = `
     <div class="modal-card">
       <div class="modal-header">
-        <h3>О курсе «${course.name || ""}»</h3>
+        <h3>О курсе «${escapeHtml(course.name || "")}»</h3>
         <button class="modal-close-btn" id="closeAboutModal">&times;</button>
       </div>
       <div class="modal-body">
-        <p><strong>Преподаватель:</strong> ${course.owner_handle || "Учитель"}</p>
-        ${course.section ? `<p><strong>Раздел / Класс:</strong> ${course.section}</p>` : ""}
-        ${course.room ? `<p><strong>Аудитория:</strong> ${course.room}</p>` : ""}
-        ${course.descriptionHeading ? `<div class="course-syllabus"><strong>Силлабус:</strong><p>${course.descriptionHeading}</p></div>` : ""}
+        <p><strong>Преподаватель:</strong> ${escapeHtml(course.owner_handle || "Учитель")}</p>
+        ${course.section ? `<p><strong>Раздел / Класс:</strong> ${escapeHtml(course.section)}</p>` : ""}
+        ${course.room ? `<p><strong>Аудитория:</strong> ${escapeHtml(course.room)}</p>` : ""}
+        ${course.descriptionHeading ? `<div class="course-syllabus"><strong>Силлабус:</strong><p>${escapeHtml(course.descriptionHeading)}</p></div>` : ""}
 
         <div class="permanent-links-block">
           <h4>Постоянные материалы и ресурсы:</h4>
@@ -304,8 +304,8 @@ export function renderUpcomingWidget(container, deadlines = [], options = {}) {
           <ul class="upcoming-list">
             ${deadlines.slice(0, 5).map(d => `
               <li class="upcoming-item" data-id="${d.id}">
-                <div class="upcoming-due-date">${d.due_label || "Скоро"}</div>
-                <div class="upcoming-item-name" title="${d.title}">${d.title}</div>
+                <div class="upcoming-due-date">${escapeHtml(d.due_label || "Скоро")}</div>
+                <div class="upcoming-item-name" title="${escapeHtml(d.title)}">${escapeHtml(d.title)}</div>
               </li>
             `).join("")}
           </ul>
@@ -714,7 +714,7 @@ export function renderStreamPosts(container, announcements = [], user = null, op
       <div class="post-header">
         <div class="post-avatar">${getUserSvgAvatar(authorHandle, 40)}</div>
         <div class="post-meta">
-          <div class="post-author-name">${authorHandle}</div>
+          <div class="post-author-name">${escapeHtml(authorHandle)}</div>
           <div class="post-timestamp">${post.creationTime ? new Date(post.creationTime).toLocaleString("ru-RU") : "Только что"}</div>
         </div>
         <div class="post-actions-menu">
@@ -723,7 +723,7 @@ export function renderStreamPosts(container, announcements = [], user = null, op
       </div>
 
       <div class="post-content">
-        <p class="post-text">${post.text || ""}</p>
+        <p class="post-text">${escapeHtml(post.text || "")}</p>
         ${post.materials && post.materials.length > 0 ? `
           <div class="post-materials-grid">
             ${post.materials.map(m => {
@@ -731,7 +731,7 @@ export function renderStreamPosts(container, announcements = [], user = null, op
               return `
                 <a href="${link.url || link.alternateLink || '#'}" target="_blank" rel="noopener" class="post-material-card">
                   <span class="mat-icon">📎</span>
-                  <span class="mat-title">${link.title || "Вложение"}</span>
+                  <span class="mat-title">${escapeHtml(link.title || "Вложение")}</span>
                 </a>
               `;
             }).join("")}
@@ -814,7 +814,7 @@ async function loadPostComments(courseId, parentKind, parentId, container, curre
             <div class="comment-avatar">${getUserSvgAvatar(c.author_handle || "U", 26)}</div>
             <div class="comment-body">
               <div class="comment-author-row">
-                <span class="comment-author">${c.author_handle || "Пользователь"}</span>
+                <span class="comment-author">${escapeHtml(c.author_handle || "Пользователь")}</span>
                 <span class="comment-time">${c.created_at ? new Date(c.created_at).toLocaleTimeString("ru-RU", {hour: "2-digit", minute:"2-digit"}) : ""}</span>
               </div>
               <div class="comment-text">${formatCommentWithHandles(c.body_text || "")}</div>
@@ -844,7 +844,8 @@ async function loadPostComments(courseId, parentKind, parentId, container, curre
 }
 
 function formatCommentWithHandles(text) {
-  return text.replace(/@([A-Za-z0-9А-Яа-я_-]+)/g, `<span class="handle-mention">@$1</span>`);
+  const safe = escapeHtml(text || "");
+  return safe.replace(/@([A-Za-z0-9А-Яа-я_-]+)/g, `<span class="handle-mention">@$1</span>`);
 }
 
 /**
@@ -876,9 +877,9 @@ function bindHandleAutocomplete(textarea, dropdown, roster = []) {
     }
 
     dropdown.innerHTML = filtered.map(u => `
-      <div class="autocomplete-item" data-handle="${u.handle}">
+      <div class="autocomplete-item" data-handle="${escapeHtml(u.handle)}">
         <span class="auto-avatar">${getUserSvgAvatar(u.handle, 20)}</span>
-        <span class="auto-handle">@${u.handle}</span>
+        <span class="auto-handle">@${escapeHtml(u.handle)}</span>
       </div>
     `).join("");
 
