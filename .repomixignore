@@ -1,0 +1,34 @@
+# Скомпилированные бандлы и статика
+app/static/board/assets/
+**/static/**/assets/**
+**/*.min.js
+**/*.min.css
+**/*.map
+**/*.svg
+**/fonts/**
+
+# Окружения, зависимости и кэш
+.venv/
+venv/
+env/
+**/__pycache__/**
+**/*.pyc
+**/.pytest_cache/**
+**/node_modules/**
+dist/
+build/
+.git/
+
+# Lock-файлы, базы и логи
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+poetry.lock
+*.sqlite3
+*.db
+*.log
+
+# Документация и тесты (раскомментируй при необходимости)
+docs/
+**/tests/**
+**/test/**
