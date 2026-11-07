@@ -314,9 +314,9 @@ def create_student(
             conn.execute(
                 """INSERT OR IGNORE INTO submissions (
                     coursework_id, student_id, status, v1_state, is_late,
-                    draft_rubric_json, assigned_rubric_json, short_answer_text, mc_answer_text,
+                    draft_rubric_json, assigned_rubric_json, mc_answer_text,
                     created_at, updated_at
-                ) VALUES (?, ?, 'assigned', 'NEW', 0, '{}', '{}', '', '', ?, ?)""",
+                ) VALUES (?, ?, 'assigned', 'NEW', 0, '{}', '{}', '', ?, ?)""",
                 (cw["id"], target_id, now, now)
             )
 

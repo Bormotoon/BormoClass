@@ -9,8 +9,20 @@ from app.db import db_session
 from app.v1.rbac import resolve_auth_context, get_course_role
 from app.v1.protocol import api_error
 from app.classroom.sse_hub import sse_hub
+from app.passport.pii_guard import assert_zero_pii_text
 
 router = APIRouter(tags=["comments"])
+
+ALLOWED_STUDENT_MESSAGES = {
+    "🟢 Всё понятно",
+    "🟡 Есть вопрос по условию",
+    "🔴 Нужна помощь учителя",
+    "✅ Работа сдана",
+    "Всё понятно",
+    "Есть вопрос по условию",
+    "Нужна помощь учителя",
+    "Работа сдана",
+}
 
 # -----------------------------------------------------------------------------
 # Публичные комментарии класса (class_comments)
@@ -73,8 +85,8 @@ def create_class_comment(
         if not role:
             api_error(403, "PERMISSION_DENIED", "Нет доступа к курсу")
 
-        # Проверка настроек постинга для учеников
-        if role == "STUDENT":
+        # Проверка настроек постинга и PII для учеников и учителей
+        if role == "STUDENT" or ctx.user.get("role") == "student":
             course = conn.execute("SELECT stream_post_mode FROM classes WHERE id = ?", (class_id,)).fetchone()
             if course and course["stream_post_mode"] == "ONLY_TEACHERS_CAN_POST_OR_COMMENT":
                 api_error(403, "PERMISSION_DENIED", "Комментарии отключены учителем")
@@ -85,6 +97,14 @@ def create_class_comment(
             ).fetchone()
             if member and member["is_muted"] == 1:
                 api_error(403, "PERMISSION_DENIED", "Вам запрещено оставлять комментарии")
+
+            if req.body_text.strip() not in ALLOWED_STUDENT_MESSAGES:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Ученикам запрещен свободный ввод текста в комментариях (Zero-PII). Выберите разрешенную фразу: {', '.join(sorted(ALLOWED_STUDENT_MESSAGES))}"
+                )
+        else:
+            assert_zero_pii_text(req.body_text)
 
         now = int(time.time())
         cursor = conn.execute("""
@@ -151,6 +171,15 @@ def update_class_comment(
 
         if row["author_user_id"] != ctx.user["id"] and ctx.user.get("role") != "admin":
             api_error(403, "PERMISSION_DENIED", "Редактировать комментарий может только его автор")
+
+        if ctx.user.get("role") == "student":
+            if req.body_text.strip() not in ALLOWED_STUDENT_MESSAGES:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Ученикам разрешено выбирать только фразы из белого списка: {', '.join(sorted(ALLOWED_STUDENT_MESSAGES))}"
+                )
+        else:
+            assert_zero_pii_text(req.body_text)
 
         now = int(time.time())
         conn.execute("UPDATE class_comments SET body_text = ?, updated_at = ? WHERE id = ?", (req.body_text, now, id))
@@ -237,6 +266,15 @@ def create_private_comment(
         # Строгая изоляция 1-на-1
         if ctx.user["id"] != student_id and role not in ("OWNER", "TEACHER", "ADMIN"):
             api_error(403, "PERMISSION_DENIED", "Доступ к приватным комментариям запрещен")
+
+        if ctx.user.get("role") == "student":
+            if req.body_text.strip() not in ALLOWED_STUDENT_MESSAGES:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Ученикам запрещен свободный ввод текста в приватных комментариях (Zero-PII). Выберите разрешенную фразу: {', '.join(sorted(ALLOWED_STUDENT_MESSAGES))}"
+                )
+        else:
+            assert_zero_pii_text(req.body_text)
 
         now = int(time.time())
         cursor = conn.execute("""

@@ -105,8 +105,9 @@ def upload_file(
         if len(data) > settings.MAX_UPLOAD_BYTES:
             api_error(400, "INVALID_ARGUMENT", f"Файл превышает лимит {settings.MAX_UPLOAD_BYTES} байт")
 
-        filename = file.filename or "file.bin"
-        detected_mime = detect_mime_type(filename, file.content_type)
+        client_filename = file.filename or "file.bin"
+        ext = Path(client_filename).suffix.lstrip(".") or "bin"
+        detected_mime = detect_mime_type(client_filename, file.content_type)
         if detected_mime not in ALLOWED_MIME_TYPES and detected_mime != "application/octet-stream":
             api_error(400, "INVALID_ARGUMENT", f"Тип файла '{detected_mime}' запрещен политикой безопасности")
 
@@ -114,7 +115,8 @@ def upload_file(
         file_id = f"file_{secrets.token_hex(8)}"
         now = int(time.time())
 
-        file_kind = "BOARD" if (filename.endswith(".excalidraw") or detected_mime == "application/vnd.excalidraw+json") else "FILE"
+        file_kind = "BOARD" if (client_filename.endswith(".excalidraw") or detected_mime == "application/vnd.excalidraw+json") else "FILE"
+        file_title = f"Вложение #{sha256_hex[:8]}.{ext}"
 
         conn.execute("""
             INSERT INTO stored_files (
@@ -122,7 +124,7 @@ def upload_file(
                 size_bytes, sha256_hex, disk_rel_path, file_kind,
                 source_template_id, created_at, updated_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?)
-        """, (file_id, folder_id, user["id"], filename, detected_mime, size_bytes, sha256_hex, rel_path, file_kind, now, now))
+        """, (file_id, folder_id, user["id"], file_title, detected_mime, size_bytes, sha256_hex, rel_path, file_kind, now, now))
 
         conn.execute("""
             INSERT OR REPLACE INTO file_acl (file_id, user_id, access_mode, updated_at)
@@ -143,7 +145,8 @@ def upload_file(
 
         return {
             "id": file_id,
-            "title": filename,
+            "title": file_title,
+            "file_title": file_title,
             "alternateLink": f"/api/storage/files/{file_id}",
             "thumbnailUrl": f"/api/storage/files/{file_id}/thumbnail.svg",
             "mimeType": detected_mime,
@@ -243,8 +246,8 @@ def link_preview(req: LinkPreviewRequest, request: Request):
             row = conn.execute("SELECT * FROM stored_files WHERE id = ?", (fid,)).fetchone()
             if row:
                 return {
-                    "type": "DRIVE_FILE",
-                    "driveFile": {
+                    "type": "LOCAL_FILE",
+                    "localFile": {
                         "id": row["id"],
                         "title": row["file_title"],
                         "alternateLink": f"/api/storage/files/{row['id']}",
@@ -276,8 +279,8 @@ def link_preview(req: LinkPreviewRequest, request: Request):
             tokens = url_str.rstrip("/").split("/")
             raw_id = tokens[-1].split("?")[0]
             return {
-                "type": "DRIVE_FILE",
-                "driveFile": {
+                "type": "LOCAL_FILE",
+                "localFile": {
                     "id": f"board_{raw_id}",
                     "title": f"Интерактивная доска #{raw_id}",
                     "alternateLink": url_str,

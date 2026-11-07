@@ -35,13 +35,10 @@ CREATE TABLE IF NOT EXISTS classes (
     levels                     TEXT NOT NULL DEFAULT '',
     course_state               TEXT NOT NULL DEFAULT 'ACTIVE',
     enrollment_enabled         INTEGER NOT NULL DEFAULT 1,
-    guardians_enabled          INTEGER NOT NULL DEFAULT 1,
     calendar_token             TEXT NOT NULL DEFAULT '',
     teacher_folder_id          TEXT,
     theme_color                TEXT NOT NULL DEFAULT '#f57300',
     banner_preset              TEXT NOT NULL DEFAULT 'default',
-    video_room_url             TEXT NOT NULL DEFAULT '',
-    video_visible_to_students  INTEGER NOT NULL DEFAULT 1,
     stream_post_mode           TEXT NOT NULL DEFAULT 'STUDENTS_CAN_POST_AND_COMMENT',
     stream_work_mode           TEXT NOT NULL DEFAULT 'SHOW_ATTACHMENTS_AND_DETAILS',
     show_deleted_items         INTEGER NOT NULL DEFAULT 0,
@@ -156,7 +153,6 @@ CREATE TABLE IF NOT EXISTS submissions (
     draft_rubric_json     TEXT NOT NULL DEFAULT '{}',
     assigned_rubric_json  TEXT NOT NULL DEFAULT '{}',
     is_excused            INTEGER NOT NULL DEFAULT 0,
-    short_answer_text     TEXT NOT NULL DEFAULT '',
     mc_answer_text        TEXT NOT NULL DEFAULT '',
     created_at            INTEGER NOT NULL DEFAULT 0,
     updated_at            INTEGER NOT NULL,
@@ -246,26 +242,6 @@ CREATE TABLE IF NOT EXISTS student_group_members (
     class_id   INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
     student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     PRIMARY KEY (group_id, student_id)
-);
-
-CREATE TABLE IF NOT EXISTS guardian_invitations (
-    id               INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    invite_target    TEXT NOT NULL,
-    invite_code_hash TEXT NOT NULL,
-    state            TEXT NOT NULL DEFAULT 'PENDING',
-    inviter_user_id  INTEGER,
-    created_at       INTEGER NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS guardians (
-    id               INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    guardian_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    invite_target    TEXT NOT NULL DEFAULT '',
-    digest_frequency TEXT NOT NULL DEFAULT 'WEEKLY',
-    created_at       INTEGER NOT NULL,
-    UNIQUE(student_id, guardian_user_id)
 );
 
 CREATE TABLE IF NOT EXISTS stored_folders (
@@ -501,55 +477,6 @@ CREATE TABLE IF NOT EXISTS originality_reports (
     match_percent     REAL NOT NULL DEFAULT 0.0,
     matches_json      TEXT NOT NULL DEFAULT '[]',
     created_at        INTEGER NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS addon_attachments (
-    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
-    class_id           INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
-    item_kind          TEXT NOT NULL,
-    item_id            INTEGER NOT NULL,
-    client_id          TEXT NOT NULL,
-    title              TEXT NOT NULL,
-    teacher_view_uri   TEXT NOT NULL,
-    student_view_uri   TEXT NOT NULL,
-    review_uri         TEXT NOT NULL DEFAULT '',
-    max_points         REAL,
-    grade_sync_enabled INTEGER NOT NULL DEFAULT 0,
-    due_at             INTEGER,
-    copy_history_json  TEXT NOT NULL DEFAULT '[]',
-    created_at         INTEGER NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS addon_submissions (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    attachment_id INTEGER NOT NULL REFERENCES addon_attachments(id) ON DELETE CASCADE,
-    student_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    points_earned REAL,
-    updated_at    INTEGER NOT NULL,
-    UNIQUE(attachment_id, student_id)
-);
-
-CREATE TABLE IF NOT EXISTS push_registrations (
-    id           TEXT PRIMARY KEY,
-    user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    client_id    TEXT NOT NULL DEFAULT 'first_party',
-    feed_type    TEXT NOT NULL,
-    class_id     INTEGER REFERENCES classes(id) ON DELETE CASCADE,
-    target_topic TEXT NOT NULL,
-    expires_at   INTEGER NOT NULL,
-    created_at   INTEGER NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS webhook_deliveries (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    registration_id TEXT NOT NULL,
-    target_url      TEXT NOT NULL,
-    payload_json    TEXT NOT NULL,
-    attempt_count   INTEGER NOT NULL DEFAULT 0,
-    next_retry_at   INTEGER NOT NULL DEFAULT 0,
-    delivered       INTEGER NOT NULL DEFAULT 0,
-    last_status     INTEGER NOT NULL DEFAULT 0,
-    created_at      INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS notifications (
