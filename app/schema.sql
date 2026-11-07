@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS users (
     verified_teacher    INTEGER NOT NULL DEFAULT 0,
     account_disabled    INTEGER NOT NULL DEFAULT 0,
     org_unit_id         INTEGER,
+    e2ee_public_key     TEXT NOT NULL DEFAULT '',
+    e2ee_key_bundle_json TEXT NOT NULL DEFAULT '{}',
     created_at          INTEGER NOT NULL
 );
 
@@ -40,6 +42,8 @@ CREATE TABLE IF NOT EXISTS classes (
     subject_code               TEXT NOT NULL DEFAULT 'inf',   -- Код предмета
     grade_level                INTEGER NOT NULL DEFAULT 8 CHECK (grade_level BETWEEN 1 AND 11),
     join_pin                   TEXT NOT NULL UNIQUE,          -- 5-значный пин-код для входа с интерактивной доски
+    join_pin_hash              TEXT NOT NULL DEFAULT '',      -- Хэш для поиска по пин-коду
+    e2ee_key_envelope          TEXT NOT NULL DEFAULT '{}',    -- Конверт ключа класса
     quarter_goal               TEXT NOT NULL DEFAULT '',      -- "Цель класса на четверть" в шапке Ленты
     recess_locked_until        INTEGER NOT NULL DEFAULT 0,    -- Рубильник блокировки игр на время контрольной
     classroom_state_json       TEXT NOT NULL DEFAULT '{}',    -- JSON: рассадка 3 рядов парт, слайды доски и состояние
@@ -74,6 +78,7 @@ CREATE TABLE IF NOT EXISTS class_members (
     is_muted           INTEGER NOT NULL DEFAULT 0,
     enrollment_active  INTEGER NOT NULL DEFAULT 1,
     student_folder_id  TEXT,
+    e2ee_wrapped_key   TEXT NOT NULL DEFAULT '',
     joined_at          INTEGER NOT NULL,
     PRIMARY KEY (class_id, student_id),
     UNIQUE (class_id, seat_number)
