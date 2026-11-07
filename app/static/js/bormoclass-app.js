@@ -7,6 +7,30 @@
 import { ICONS, getIcon } from "./icons.js";
 import { TeacherZeroKnowledgeVault } from "./webcrypto-vault.js";
 
+import * as ApiV1 from "./modules/api-v1.js";
+import * as HomeDrawer from "./modules/home-and-drawer.js";
+import * as StreamComments from "./modules/stream-and-comments.js";
+import * as ClassworkQuizzes from "./modules/classwork-and-quizzes.js";
+import * as PeopleGroups from "./modules/people-groups-guardians.js";
+import * as SpeedGrader from "./modules/speedgrader.js";
+import * as GradebookPeriods from "./modules/gradebook-periods.js";
+import * as GlobalCalendarAdmin from "./modules/global-calendar-admin.js";
+import * as PdfScanner from "./modules/pdf-scanner.js";
+
+if (typeof window !== "undefined") {
+  window.BormoClassModules = {
+    ApiV1,
+    HomeDrawer,
+    StreamComments,
+    ClassworkQuizzes,
+    PeopleGroups,
+    SpeedGrader,
+    GradebookPeriods,
+    GlobalCalendarAdmin,
+    PdfScanner,
+  };
+}
+
 /**
  * Universal Toast Notification System
  */

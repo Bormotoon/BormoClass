@@ -4,8 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BormoClass — Автономный класс и интерактивная доска (Zero-PII)</title>
+  <link rel="manifest" href="/static/manifest.webmanifest">
   <link rel="stylesheet" href="/static/css/md3-tokens.css">
   <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="stylesheet" href="/static/css/classroom-ext.css">
 </head>
 <body>
   <!-- Top App Bar -->
@@ -50,5 +52,12 @@
   <!-- Scripts -->
   <script src="/static/js/pb-passport-bridge.js"></script>
   <script type="module" src="/static/js/bormoclass-app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>

@@ -1,0 +1,370 @@
+/* ==========================================================================
+   BormoClass Classroom Extended Styles (Material Design 3.0, WCAG 2.1 AA)
+   Zero-PII, Zero External CDNs, 100% Offline Compatible
+   ========================================================================== */
+
+/* Drawer & Navigation */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.drawer-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer-container {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 300px;
+  max-width: 85vw;
+  background: var(--md-sys-color-surface, #ffffff);
+  color: var(--md-sys-color-on-surface, #1f1f1f);
+  z-index: 1001;
+  transform: translateX(-100%);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+  overflow-y: auto;
+}
+
+.drawer-container.open {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant, #e0e0e0);
+}
+
+.drawer-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--md-sys-color-outline, #757575);
+  padding: 16px 20px 8px 20px;
+}
+
+.drawer-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  color: var(--md-sys-color-on-surface, #1f1f1f);
+  text-decoration: none;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border-radius: 0 24px 24px 0;
+  margin-right: 8px;
+  transition: background-color 0.15s ease;
+}
+
+.drawer-item:hover, .drawer-item:focus-visible {
+  background-color: var(--md-sys-color-surface-container-high, #f0f4f9);
+  outline: none;
+}
+
+.drawer-item.active {
+  background-color: var(--md-sys-color-primary-container, #d3e3fd);
+  color: var(--md-sys-color-on-primary-container, #041e49);
+  font-weight: 600;
+}
+
+/* Course Stream & Banner */
+.stream-banner {
+  border-radius: 12px;
+  padding: 28px 24px;
+  color: #ffffff;
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  margin-bottom: 24px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.stream-banner-content {
+  position: relative;
+  z-index: 2;
+}
+
+.stream-banner-title {
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 0 0 6px 0;
+}
+
+.stream-banner-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.92;
+  margin: 0;
+}
+
+.stream-code-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  padding: 6px 14px;
+  border-radius: 8px;
+  margin-top: 16px;
+  font-family: monospace;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+/* SpeedGrader 2-Panel Layout */
+.speedgrader-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 64px);
+  overflow: hidden;
+  background: #f8f9fa;
+}
+
+.speedgrader-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  z-index: 10;
+  gap: 16px;
+}
+
+.speedgrader-workspace {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.speedgrader-preview-panel {
+  flex: 7;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: #525659;
+  overflow: auto;
+  align-items: center;
+  padding: 24px;
+}
+
+.speedgrader-sidebar-panel {
+  flex: 3;
+  min-width: 340px;
+  max-width: 440px;
+  background: #ffffff;
+  border-left: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 20px;
+  gap: 20px;
+}
+
+/* Annotation Canvas Layer */
+.annotation-overlay-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  cursor: crosshair;
+  z-index: 5;
+}
+
+/* Rubrics Criteria Grid */
+.rubric-grid {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.rubric-criterion {
+  border-bottom: 1px solid #e0e0e0;
+  padding: 12px;
+}
+
+.rubric-criterion:last-child {
+  border-bottom: none;
+}
+
+.rubric-criterion-header {
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.rubric-levels-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.rubric-level-card {
+  flex: 1;
+  min-width: 100px;
+  padding: 8px 12px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: #ffffff;
+}
+
+.rubric-level-card:hover {
+  background: #f6f8fa;
+  border-color: #0969da;
+}
+
+.rubric-level-card.selected {
+  background: #ddf4ff;
+  border-color: #0969da;
+  box-shadow: 0 0 0 1px #0969da;
+}
+
+.rubric-level-points {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0969da;
+}
+
+/* Gradebook 2D Sticky Matrix */
+.gradebook-table-container {
+  overflow: auto;
+  max-height: calc(100vh - 160px);
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.gradebook-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+.gradebook-table th, .gradebook-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #e0e0e0;
+  border-right: 1px solid #e0e0e0;
+  white-space: nowrap;
+}
+
+.gradebook-table th {
+  background: #f6f8fa;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.gradebook-sticky-col {
+  position: sticky;
+  left: 0;
+  background: #ffffff;
+  z-index: 3;
+  font-weight: 500;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+}
+
+.gradebook-table th.gradebook-sticky-col {
+  z-index: 4;
+  background: #f6f8fa;
+}
+
+.gradebook-cell-input {
+  width: 60px;
+  padding: 6px;
+  text-align: center;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.gradebook-cell-input:focus {
+  border-color: #1a73e8;
+  outline: none;
+  background: #e8f0fe;
+}
+
+/* PDF Scanner Viewfinder */
+.scanner-container {
+  position: fixed;
+  inset: 0;
+  background: #000000;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+}
+
+.scanner-video-preview {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.scanner-viewfinder-box {
+  position: absolute;
+  width: 80%;
+  height: 75%;
+  border: 2px dashed rgba(255, 255, 255, 0.85);
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.scanner-controls {
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: rgba(20, 20, 20, 0.9);
+}
+
+.scanner-shutter-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 4px solid rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.scanner-shutter-btn:active {
+  transform: scale(0.92);
+}
+
+/* Accessibility & WCAG 2.1 AA */
+:focus-visible {
+  outline: 3px solid #1a73e8;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
