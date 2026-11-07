@@ -141,11 +141,13 @@ def create_quiz(req: QuizCreateRequest, request: Request):
         qs = json.loads(req.questions_json)
         if isinstance(qs, list):
             for q in qs:
-                if isinstance(q, dict) and q.get("type") == "PARAGRAPH":
-                    raise HTTPException(
-                        status_code=422,
-                        detail="Тип вопроса PARAGRAPH (эссе в свободной форме) запрещен стандартом Zero-PII (152-ФЗ РФ)."
-                    )
+                if isinstance(q, dict):
+                    q_type = str(q.get("type") or "").upper()
+                    if q_type == "PARAGRAPH":
+                        raise HTTPException(
+                            status_code=422,
+                            detail="Тип вопроса PARAGRAPH (эссе в свободной форме) запрещен стандартом Zero-PII (152-ФЗ РФ)."
+                        )
     except json.JSONDecodeError:
         pass
 
@@ -265,8 +267,8 @@ def submit_quiz(quiz_id: int, req: QuizSubmitRequest, request: Request):
             pts = float(q.get("points", 1.0))
             max_possible += pts
             ans = req.answers_json.get(q_id)
-            q_type = q.get("type")
-            if q_type == "SHORT_TEXT" and ans is not None:
+            q_type = str(q.get("type") or "").upper()
+            if q_type in ("SHORT_TEXT", "SHORT_ANSWER") and ans is not None:
                 ans_str = str(ans).strip()
                 if not is_e2ee_envelope(ans_str):
                     if len(ans_str) > 64:
