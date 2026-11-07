@@ -418,12 +418,9 @@ class EnrollmentCodeActionRequest(BaseModel):
 class ClassSettingsUpdateRequest(BaseModel):
     theme_color: Optional[str] = None
     banner_preset: Optional[str] = None
-    video_room_url: Optional[str] = None
-    video_visible_to_students: Optional[int] = None
     stream_post_mode: Optional[str] = None
     stream_work_mode: Optional[str] = None
     show_deleted_items: Optional[int] = None
-    guardians_enabled: Optional[int] = None
 
 class CopyClassRequest(BaseModel):
     title: Optional[str] = None
@@ -480,12 +477,6 @@ def update_class_settings(class_id: int, req: ClassSettingsUpdateRequest, reques
         if req.banner_preset is not None:
             updates.append("banner_preset = ?")
             params.append(req.banner_preset)
-        if req.video_room_url is not None:
-            updates.append("video_room_url = ?")
-            params.append(req.video_room_url)
-        if req.video_visible_to_students is not None:
-            updates.append("video_visible_to_students = ?")
-            params.append(req.video_visible_to_students)
         if req.stream_post_mode is not None:
             updates.append("stream_post_mode = ?")
             params.append(req.stream_post_mode)
@@ -495,9 +486,6 @@ def update_class_settings(class_id: int, req: ClassSettingsUpdateRequest, reques
         if req.show_deleted_items is not None:
             updates.append("show_deleted_items = ?")
             params.append(req.show_deleted_items)
-        if req.guardians_enabled is not None:
-            updates.append("guardians_enabled = ?")
-            params.append(req.guardians_enabled)
 
         now = int(time.time())
         updates.append("updated_at = ?")
@@ -539,18 +527,18 @@ def copy_class(class_id: int, request: Request, req: Optional[CopyClassRequest] 
                 teacher_id, title, subject_code, grade_level, join_pin,
                 quarter_goal, recess_locked_until, classroom_state_json,
                 section, description_heading, description, room, levels,
-                course_state, enrollment_enabled, guardians_enabled, calendar_token,
-                teacher_folder_id, theme_color, banner_preset, video_room_url,
-                video_visible_to_students, stream_post_mode, stream_work_mode,
+                course_state, enrollment_enabled, calendar_token,
+                teacher_folder_id, theme_color, banner_preset,
+                stream_post_mode, stream_work_mode,
                 show_deleted_items, grade_calc_type, grade_display_setting,
                 updated_at, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, 0, '{}', ?, ?, ?, ?, ?, 'ACTIVE', 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            ) VALUES (?, ?, ?, ?, ?, ?, 0, '{}', ?, ?, ?, ?, ?, 'ACTIVE', 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 uid, new_title, orig_dict["subject_code"], orig_dict["grade_level"], new_pin,
                 orig_dict["quarter_goal"], orig_dict["section"], orig_dict["description_heading"],
                 orig_dict["description"], orig_dict["room"], orig_dict["levels"],
-                orig_dict["guardians_enabled"], new_cal, new_folder_id, orig_dict["theme_color"],
-                orig_dict["banner_preset"], orig_dict["video_room_url"], orig_dict["video_visible_to_students"],
+                new_cal, new_folder_id, orig_dict["theme_color"],
+                orig_dict["banner_preset"],
                 orig_dict["stream_post_mode"], orig_dict["stream_work_mode"], orig_dict["show_deleted_items"],
                 orig_dict["grade_calc_type"], orig_dict["grade_display_setting"], now, now
             )

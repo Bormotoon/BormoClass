@@ -199,16 +199,6 @@ export function renderStreamHeader(container, course = {}, user = null, options 
       </div>
 
       <div class="stream-banner-actions">
-        ${course.video_room_url ? `
-          <a href="${course.video_room_url}" target="_blank" rel="noopener" class="btn btn-video-meet">
-            📹 Видеовстреча
-          </a>
-        ` : (isTeacher ? `
-          <button class="btn btn-video-meet" id="setupVideoRoomBtn">
-            📹 Запустить встречу
-          </button>
-        ` : "")}
-
         <button class="btn btn-about-course" id="openAboutPanelBtn" title="Материалы и силлабус курса">
           ℹ️ О курсе
         </button>
@@ -239,18 +229,6 @@ export function renderStreamHeader(container, course = {}, user = null, options 
     navigator.clipboard.writeText(code).then(() => {
       alert(`Код курса ${code} скопирован!`);
     });
-  });
-
-  document.getElementById("setupVideoRoomBtn")?.addEventListener("click", async () => {
-    try {
-      const res = await v1Fetch(`/api/classroom/classes/${course.id}/video-room`, { method: "POST" });
-      if (res && res.video_room_url) {
-        window.open(res.video_room_url, "_blank");
-        if (options.onReload) options.onReload();
-      }
-    } catch (err) {
-      alert("Не удалось запустить видеокомнату: " + err.message);
-    }
   });
 
   document.getElementById("openAboutPanelBtn")?.addEventListener("click", () => {
@@ -498,9 +476,9 @@ export function renderAnnouncementEditor(container, currentCourseId, user, optio
         });
         const json = await uploadRes.json();
         attachments.push({
-          type: "driveFile",
-          title: file.name,
-          url: json.download_url || json.url || `/api/storage/download/${json.file_id}`,
+          type: "localFile",
+          title: json.title || json.file_title || "Вложение",
+          url: json.download_url || json.url || `/api/storage/download/${json.file_id || json.id}`,
           icon: "📄"
         });
         renderAttachments();
@@ -511,10 +489,14 @@ export function renderAnnouncementEditor(container, currentCourseId, user, optio
     e.target.value = "";
   });
 
-  // Attach link
+  // Attach link: разрешены только внутренние относительные пути, начинающиеся с /
   document.getElementById("attachLinkBtn")?.addEventListener("click", () => {
-    const url = prompt("Введите URL ссылки:");
+    const url = prompt("Введите внутренний путь ссылки (начиная с /):");
     if (!url) return;
+    if (!url.startsWith("/")) {
+      alert("Разрешены только внутренние относительные пути (начинающиеся с '/'). Внешние ссылки запрещены политикой 100% автономности.");
+      return;
+    }
     const title = prompt("Заголовок ссылки:", url) || url;
     attachments.push({ type: "link", title, url, icon: "🔗" });
     renderAttachments();
@@ -631,7 +613,7 @@ export function renderAnnouncementEditor(container, currentCourseId, user, optio
 
     // Materials payload
     const materials = attachments.map(a => {
-      if (a.type === "driveFile") return { driveFile: { driveFile: { title: a.title, alternateLink: a.url } } };
+      if (a.type === "localFile" || a.type === "driveFile") return { localFile: { localFile: { title: a.title, alternateLink: a.url } } };
       if (a.type === "link") return { link: { title: a.title, url: a.url } };
       return { link: { title: a.title, url: a.url } };
     });
@@ -745,7 +727,7 @@ export function renderStreamPosts(container, announcements = [], user = null, op
         ${post.materials && post.materials.length > 0 ? `
           <div class="post-materials-grid">
             ${post.materials.map(m => {
-              const link = m.link || m.driveFile?.driveFile || {};
+              const link = m.link || m.localFile?.localFile || m.driveFile?.driveFile || {};
               return `
                 <a href="${link.url || link.alternateLink || '#'}" target="_blank" rel="noopener" class="post-material-card">
                   <span class="mat-icon">📎</span>

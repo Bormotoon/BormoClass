@@ -211,8 +211,8 @@ function createTopicSection(courseId, topic, items, user, options = {}) {
         ${item.materials && item.materials.length > 0 ? `
           <div class="cw-materials-chips">
             ${item.materials.map(m => {
-              const file = m.driveFile || m.link || {};
-              const title = file.driveFile?.title || file.title || "Вложение";
+              const file = m.localFile || m.driveFile || m.link || {};
+              const title = file.localFile?.title || file.driveFile?.title || file.title || "Вложение";
               const mode = file.shareMode || "VIEW";
               const modeLabel = mode === "STUDENT_COPY" ? "Копия для каждого" : mode === "EDIT" ? "Редактирование" : "Просмотр";
               return `<span class="mat-chip" title="Режим: ${modeLabel}">📎 ${title} <small>(${modeLabel})</small></span>`;
@@ -324,7 +324,6 @@ export function renderCourseWorkDialog(courseId, initialData = {}, options = {})
                 </label>
                 <button type="button" class="btn btn-sm btn-secondary" id="cwAddLinkBtn">🔗 Ссылка</button>
                 <button type="button" class="btn btn-sm btn-secondary" id="cwAddBoardBtn">🎨 Доска</button>
-                <button type="button" class="btn btn-sm btn-secondary" id="cwAddAddonBtn">🧩 Add-on</button>
               </div>
             </div>
 
@@ -471,9 +470,9 @@ export function renderCourseWorkDialog(courseId, initialData = {}, options = {})
         const res = await fetch("/api/storage/upload", { method: "POST", body: fd });
         const json = await res.json();
         attachments.push({
-          type: "driveFile",
-          title: f.name,
-          url: json.download_url || json.url || `/api/storage/download/${json.file_id}`,
+          type: "localFile",
+          title: json.title || json.file_title || "Вложение",
+          url: json.download_url || json.url || `/api/storage/download/${json.file_id || json.id}`,
           shareMode: "STUDENT_COPY" // Default: copy for each student
         });
         renderAttachmentsList();
@@ -483,10 +482,14 @@ export function renderCourseWorkDialog(courseId, initialData = {}, options = {})
     }
   });
 
-  // Link
+  // Link: разрешены только внутренние относительные пути портала, начинающиеся с /
   document.getElementById("cwAddLinkBtn")?.addEventListener("click", () => {
-    const url = prompt("Введите URL ссылки:");
+    const url = prompt("Введите внутренний путь ссылки (начиная с /):");
     if (!url) return;
+    if (!url.startsWith("/")) {
+      alert("Разрешены только внутренние относительные пути (начинающиеся с '/'). Внешние ссылки запрещены политикой 100% автономности.");
+      return;
+    }
     const title = prompt("Заголовок ссылки:", url) || url;
     attachments.push({ type: "link", title, url, shareMode: "VIEW" });
     renderAttachmentsList();
@@ -541,10 +544,10 @@ export function renderCourseWorkDialog(courseId, initialData = {}, options = {})
 
     // Format materials payload
     const materials = attachments.map(a => {
-      if (a.type === "driveFile") {
+      if (a.type === "localFile" || a.type === "driveFile") {
         return {
-          driveFile: {
-            driveFile: { title: a.title, alternateLink: a.url },
+          localFile: {
+            localFile: { title: a.title, alternateLink: a.url },
             shareMode: a.shareMode || "STUDENT_COPY"
           }
         };

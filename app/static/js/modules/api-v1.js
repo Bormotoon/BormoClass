@@ -1,13 +1,13 @@
 /**
  * BormoClass Transport Client & SSE Reactive Bus
- * Google Classroom REST API v1 & Internal Classroom API wrapper.
- * Zero external CDN dependencies. Zero-PII compliant.
+ * REST API v1 & Internal Classroom API wrapper.
+ * Zero external CDN dependencies. Zero-PII compliant. 100% автономность.
  */
 
-export class GoogleAPIError extends Error {
+export class BormoAPIError extends Error {
   constructor(message, status = 500, code = 500, statusText = "ERROR", details = [], raw = null) {
     super(message);
-    this.name = "GoogleAPIError";
+    this.name = "BormoAPIError";
     this.status = status;
     this.code = code;
     this.statusText = statusText;
@@ -15,6 +15,7 @@ export class GoogleAPIError extends Error {
     this.raw = raw;
   }
 }
+export const GoogleAPIError = BormoAPIError;
 
 /**
  * Automatically builds comma-separated updateMask string from object keys.
@@ -94,7 +95,7 @@ export async function v1Fetch(path, options = {}) {
   try {
     response = await fetch(url, fetchOpts);
   } catch (netErr) {
-    throw new GoogleAPIError(
+    throw new BormoAPIError(
       `Сетевая ошибка при обращении к ${url}: ${netErr.message}`,
       0,
       0,
@@ -156,7 +157,7 @@ export async function v1Fetch(path, options = {}) {
     if (response.status === 403) errMsg = errMsg || "Доступ запрещен.";
     if (response.status === 404) errMsg = errMsg || "Запрошенный ресурс не найден.";
 
-    throw new GoogleAPIError(errMsg, response.status, errCode, errStatus, errDetails, data);
+    throw new BormoAPIError(errMsg, response.status, errCode, errStatus, errDetails, data);
   }
 
   return data;

@@ -144,7 +144,6 @@ def format_course_model(row: dict, conn, ctx, role: Optional[str] = None) -> Cou
         teacherGroupEmail=f"teachers-{cid}@bormoclass.local",
         courseGroupEmail=f"course-{cid}@bormoclass.local",
         teacherFolder=teacher_folder,
-        guardiansEnabled=bool(row.get("guardians_enabled", 1)),
         calendarId=row.get("calendar_token") or f"cal_{cid}",
         gradebookSettings=gradebook_settings,
         courseMaterialSets=material_sets if material_sets else None,
@@ -210,9 +209,9 @@ def create_course(req: Course, request: Request):
                 teacher_id, title, subject_code, grade_level, join_pin,
                 quarter_goal, recess_locked_until, classroom_state_json,
                 section, description_heading, description, room, levels,
-                course_state, enrollment_enabled, guardians_enabled, calendar_token,
+                course_state, enrollment_enabled, calendar_token,
                 teacher_folder_id, theme_color, banner_preset, updated_at, created_at
-            ) VALUES (?, ?, ?, 8, ?, '', 0, '{}', ?, ?, ?, ?, ?, ?, 1, 1, ?, ?, '#f57300', 'default', ?, ?)""",
+            ) VALUES (?, ?, ?, 8, ?, '', 0, '{}', ?, ?, ?, ?, ?, ?, 1, ?, ?, '#f57300', 'default', ?, ?)""",
             (
                 owner_id, name, req.subject or "inf", pin,
                 req.section or "", req.descriptionHeading or "", req.description or "",

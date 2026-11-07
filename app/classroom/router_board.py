@@ -126,7 +126,7 @@ def get_coursework_board(coursework_id: int, request: Request, student_id: Optio
         att_row = conn.execute("""
             SELECT sa.attachment_json, sf.id AS file_id, sf.disk_rel_path
             FROM submission_attachments sa
-            JOIN stored_files sf ON sf.id = json_extract(sa.attachment_json, '$.driveFile.id')
+            JOIN stored_files sf ON sf.id = COALESCE(json_extract(sa.attachment_json, '$.localFile.id'), json_extract(sa.attachment_json, '$.driveFile.id'))
             WHERE sa.coursework_id = ? AND sa.student_id = ?
         """, (coursework_id, target_student_id)).fetchone()
 
@@ -179,7 +179,7 @@ def update_coursework_board(coursework_id: int, req: CourseworkBoardUpdateReques
         att_row = conn.execute("""
             SELECT sa.id, sf.id AS file_id, sf.disk_rel_path
             FROM submission_attachments sa
-            JOIN stored_files sf ON sf.id = json_extract(sa.attachment_json, '$.driveFile.id')
+            JOIN stored_files sf ON sf.id = COALESCE(json_extract(sa.attachment_json, '$.localFile.id'), json_extract(sa.attachment_json, '$.driveFile.id'))
             WHERE sa.coursework_id = ? AND sa.student_id = ?
         """, (coursework_id, target_student_id)).fetchone()
 
@@ -204,7 +204,7 @@ def update_coursework_board(coursework_id: int, req: CourseworkBoardUpdateReques
             """, (file_id, target_student_id, f"Доска задания #{coursework_id}", size_bytes, sha256_hex, rel_path, now, now))
 
             att_json = json.dumps({
-                "driveFile": {
+                "localFile": {
                     "id": file_id,
                     "title": f"Доска задания #{coursework_id}",
                     "alternateLink": f"/api/storage/files/{file_id}",
