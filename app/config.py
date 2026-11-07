@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     DB_PATH: str = "bormoclass.db"
     BORMOCLASS_DOMAIN: str = "localhost"
 
+    STORAGE_DIR: str = "data/storage"
+    MAX_UPLOAD_BYTES: int = 52_428_800
+    ALLOW_STUDENT_UNENROLL: bool = True
+    COURSE_CREATE_POLICY: str = "ANY_TEACHER"
+
     # СанПиН 1.2.3685-21 нормы непрерывной работы с экраном (в минутах)
     SANPIN_SCREEN_LIMITS: dict = {
         1: 20,
