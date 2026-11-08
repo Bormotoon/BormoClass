@@ -1,7 +1,7 @@
 import json
 from typing import Any
 import pytest
-from starlette.testclient import TestClient
+from fastapi.testclient import TestClient
 
 from app.passport.pii_guard import (
     EMAIL_PATTERN,

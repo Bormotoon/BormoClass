@@ -289,7 +289,7 @@ def register(req: RegisterRequest, response: Response):
             candidate = canon_handle(requested_handle)
             if not is_valid_dictionary_handle(candidate):
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                     detail="Позывной должен состоять из слов официального словаря Паспорта (Прилагательное-Существительное-Код)."
                 )
             if req.ticket:
