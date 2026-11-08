@@ -1,6 +1,6 @@
 # Contributing to BormoClass
 
-Thank you for your interest in contributing to **BormoClass**! We welcome bug reports, feature suggestions, architectural improvements, and code contributions from educators, developers, and security researchers worldwide.
+Thank you for your interest in contributing to **BormoClass** — the self-hosted, open-source alternative to Google Classroom with an integrated offline whiteboard and sovereign Zero-PII privacy architecture! We welcome bug reports, feature suggestions, architectural improvements, and code contributions from educators, developers, and security researchers worldwide.
 
 ---
 

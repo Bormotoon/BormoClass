@@ -138,14 +138,14 @@ def generate():
         {
             "lang": "en",
             "title": "Support BormoClass",
-            "subtitle": "Sovereign, Zero-PII classroom platform & interactive whiteboard. If it empowers your school —",
+            "subtitle": "Self-hosted open source Google Classroom alternative & whiteboard. If it empowers your school —",
             "action": "buy the author a coffee → dalink.to/bormotoon",
             "out_png": "docs/assets/donate_banner.png",
         },
         {
             "lang": "ru",
             "title": "Поддержать BormoClass",
-            "subtitle": "Суверенная Zero-PII платформа и школьная доска. Если она помогает вашей школе —",
+            "subtitle": "Свободный self-hosted аналог Google Classroom и школьная доска. Если проект полезен вашей школе —",
             "action": "угостите автора кофе → dalink.to/bormotoon",
             "out_png": "docs/assets/donate_banner_ru.png",
         }

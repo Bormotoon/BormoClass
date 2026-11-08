@@ -2,7 +2,7 @@
 
 ## 🛡️ Zero-PII & Threat Model Commitments
 
-**BormoClass** is architected around a Zero-Trust, Zero-PII threat model designed to comply with Russian Federal Law **152-FZ** (Personal Data Protection) and strict international data sovereignty standards.
+**BormoClass** is a self-hosted, open-source alternative to Google Classroom architected around a Zero-Trust, Zero-PII threat model designed to comply with Russian Federal Law **152-FZ** (Personal Data Protection) and strict international data sovereignty standards.
 
 The core security invariants are:
 1. **0 Bytes of PII on Server**: The backend database (SQLite WAL), server logs, caching layers, and HTTP headers never store real student names, emails, phone numbers, Russian national IDs (SNILS, Passport numbers), or location data.

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 380" width="1280" height="380" role="img" aria-label="BormoClass — Zero-PII &amp; End-to-End Encrypted Classroom Platform">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 380" width="1280" height="380" role="img" aria-label="BormoClass — Self-Hosted Open Source Google Classroom Alternative">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0f172a"/>
@@ -55,16 +55,16 @@
   <text x="152" y="96" fill="#ffffff" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif" font-size="54" font-weight="800" letter-spacing="-1">BormoClass</text>
 
   <g transform="translate(486, 63)">
-    <rect x="0" y="0" width="188" height="30" rx="15" fill="#f57300" fill-opacity="0.18" stroke="#f57300" stroke-width="1.2"/>
-    <text x="94" y="20" text-anchor="middle" fill="#ffb366" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="12.5" font-weight="700">SOVEREIGN LMS • v1</text>
+    <rect x="0" y="0" width="224" height="30" rx="15" fill="#f57300" fill-opacity="0.18" stroke="#f57300" stroke-width="1.2"/>
+    <text x="112" y="20" text-anchor="middle" fill="#ffb366" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="12" font-weight="700">OPEN SOURCE • SELF-HOSTED</text>
   </g>
 
-  <text x="154" y="125" fill="#fb923c" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif" font-size="15.5" font-weight="700" letter-spacing="0.4">ZERO-PII DIGITAL CLASSROOM  •  CLIENT-SIDE E2EE  •  AIR-GAPPED SCHOOL BOARD</text>
+  <text x="154" y="125" fill="#fb923c" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif" font-size="15" font-weight="700" letter-spacing="0.4">SELF-HOSTED OPEN SOURCE GOOGLE CLASSROOM ALTERNATIVE • ZERO-PII</text>
 
   <!-- Bilingual Headlines -->
-  <text x="48" y="174" fill="#f8fafc" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif" font-size="19.5" font-weight="600">Self-hosted classroom platform storing 0 bytes of personal data on the server.</text>
-  <text x="48" y="202" fill="#cbd5e1" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif" font-size="15" font-weight="400">Автономная школьная LMS по стандарту Zero-PII (152-ФЗ РФ): позывные вместо ФИО,</text>
-  <text x="48" y="224" fill="#cbd5e1" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif" font-size="15" font-weight="400">клиентское WebCrypto E2EE, интерактивная карта парт, SpeedGrader и офлайн-доска.</text>
+  <text x="48" y="174" fill="#f8fafc" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif" font-size="19" font-weight="600">Self-hosted open source Google Classroom alternative storing 0 bytes of PII on the server.</text>
+  <text x="48" y="202" fill="#cbd5e1" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif" font-size="14.5" font-weight="400">Свободный self-hosted аналог Google Classroom по стандарту Zero-PII (152-ФЗ РФ): 4 экрана курса,</text>
+  <text x="48" y="224" fill="#cbd5e1" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif" font-size="14.5" font-weight="400">105 методов API v1, клиентское WebCrypto E2EE, SpeedGrader и автономная школьная доска.</text>
 
   <!-- 5 Key Feature Pills (Row 1 + Row 2 for spacious legibility) -->
   <g transform="translate(48, 260)" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif" font-size="13.5" font-weight="700">

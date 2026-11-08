@@ -1,16 +1,19 @@
 <div align="center">
 
 <p align="center">
-  <img src="docs/assets/banner.svg" alt="BormoClass — Sovereign Zero-PII LMS & Interactive Whiteboard" width="100%">
+  <img src="docs/assets/banner.svg" alt="BormoClass — Self-Hosted Open Source Google Classroom Alternative" width="100%">
 </p>
 
 # BormoClass
 
-**Sovereign, Zero-PII Classroom Management System, SpeedGrader & 100% Offline Interactive Whiteboard**<br>
-Full Google Classroom v1 REST API parity, Simonov educational analytics, client-side WebCrypto AES-256-GCM encryption, and 0 bytes of server-side personal data under Russian Federal Law 152-FZ.
+**Self-Hosted Open Source Google Classroom Alternative & Sovereign Zero-PII LMS**<br>
+Full Google Classroom v1 REST API parity (105 methods), 100% offline interactive school whiteboard, split-screen SpeedGrader, Simonov educational analytics, client-side WebCrypto AES-256-GCM encryption, and 0 bytes of server-side personal data under Russian Federal Law 152-FZ.
 
 [![CI](https://github.com/Bormotoon/BormoClass/actions/workflows/ci.yml/badge.svg)](https://github.com/Bormotoon/BormoClass/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Google Classroom: Self-Hosted Alternative](https://img.shields.io/badge/Google%20Classroom-Self--Hosted%20Alternative-4285F4?logo=google-classroom&logoColor=white)](#-google-classroom-vs-bormoclass)
+[![Open Source](https://img.shields.io/badge/Open%20Source-100%25%20Free%20(Apache--2.0)-success.svg)](LICENSE)
+[![Self-Hosted](https://img.shields.io/badge/Deployment-Self--Hosted-8A2BE2.svg)](#-quick-start--deployment)
 [![Zero-PII: 152--FZ RF](https://img.shields.io/badge/Zero--PII-152--%D0%A4%D0%97%20%D0%A0%D0%A4-00A86B.svg)](docs/assets/zero-pii-flow.svg)
 [![Encryption: WebCrypto AES--256--GCM](https://img.shields.io/badge/Encryption-AES--256--GCM%20%2B%20ECDH-990000.svg)](app/static/js/e2ee-crypto.js)
 <br>
@@ -51,30 +54,34 @@ Full Google Classroom v1 REST API parity, Simonov educational analytics, client-
 
 ## 💡 Why BormoClass?
 
-Modern educational institutions face a profound dilemma: cloud learning management systems (LMS) such as Google Classroom, Microsoft Teams, and Canvas offer streamlined assignment workflows, but they demand exhaustive personal data collection. School-wide email accounts, legal student names, phone numbers, surveillance telemetry, and behavioral footprints are routinely uploaded to centralized corporate cloud silos. In the Russian Federation, this conflicts directly with **Federal Law 152-FZ** ("On Personal Data"), **Federal Law 273-FZ** ("On Education in the Russian Federation"), and strict municipal sovereignty mandates.
+Modern educational institutions face a critical challenge: proprietary cloud learning management systems (LMS) such as Google Classroom, Microsoft Teams, and Canvas offer streamlined assignment workflows, but they demand exhaustive personal data collection, impose heavy vendor lock-in, and rely on centralized corporate cloud infrastructure. School-wide email accounts, legal student names, phone numbers, surveillance telemetry, and behavioral footprints are routinely uploaded to overseas cloud silos. In many jurisdictions — including the Russian Federation under **Federal Law 152-FZ** ("On Personal Data") and **Federal Law 273-FZ** ("On Education in the Russian Federation") — institutional data sovereignty and privacy mandates make reliance on proprietary US cloud services legally problematic or impossible.
 
-**BormoClass** is the **first sovereign, self-hosted, 100% free LMS** that completely resolves this contradiction:
+**BormoClass** is the **first sovereign, self-hosted, 100% free and open-source alternative to Google Classroom**:
 
-1. **Absolute Zero-PII Standard (152-FZ RF):** Physical servers, SQLite databases, HTTP session cookies, and operational logs store **0 bytes of student personal data**. Students onboard using anonymous procedurally generated callsigns (`Adjective-Noun-Code`) and 4-word recovery passphrases. Real names, email addresses, phone numbers, and Russian national identifiers (SNILS) are never requested, stored, or processed.
-2. **Client-Side Zero-Knowledge Encryption (WebCrypto E2EE):** Any sensitive student submissions, private teacher remarks, rubric annotations, and canvas drawings are encrypted directly in the browser via WebCrypto **AES-256-GCM + ECDH P-256** using class PIN-derived keys. The backend server acts solely as a blinded content-addressable storage (CAS) engine.
-3. **100% Offline Interactive School Board:** Integrates an offline-hardened fork of **Excalidraw 0.18.1** with zero CDN dependencies, complete Russian localization, and a dedicated Teacher Tools panel (`linear ruler`, `protractor`, `set square`, `compass`, and authentic Russian notebook rulings: 5mm grid, 1st-grade slanted guidelines, wide lines, music staves, and coordinate planes).
-4. **Pedagogical Analytics by V. P. Simonov:** Built-in gradebook matrix with Russian 5-point scale translation and exact mathematical evaluation of **СОУ** (Degree of Student Learning), **КЗ** (Quality of Knowledge), and **Усп** (Absolute Performance).
-5. **Full Google Classroom v1 REST API Compatibility:** Standardized endpoints (`/v1/courses`, `/v1/courseWork`, `/v1/studentSubmissions`, etc.) allow dropping BormoClass into existing school software infrastructures with zero integration friction.
+1. **True Self-Hosting & 100% Open Source (Apache-2.0):** Run BormoClass entirely on your institution's own servers, school VPS, or air-gapped local network. You own 100% of your data and infrastructure. Zero licensing fees, zero ads, zero telemetry, and zero risk of cloud account deplatforming or service sunset.
+2. **Drop-In Google Classroom Experience:** Built around the iconic 4-screen layout that educators and students already master: **Stream**, **Classwork**, **People**, and **Grades** (*Лента*, *Задания*, *Пользователи*, *Оценки*). Teachers organize materials by topic, publish assignments with rubrics and deadlines, conduct class discussions, and grade submissions with zero learning curve.
+3. **Full Google Classroom v1 REST API Parity (105 Methods):** Directly implements the official Google Classroom API Discovery v1 specification (`/v1/courses`, `/v1/courseWork`, `/v1/studentSubmissions`, etc.). School automation scripts, grade exporters, roster synchronizers, and bot integrations work out-of-the-box.
+4. **Absolute Zero-PII Standard (152-FZ RF):** Physical servers, SQLite databases, HTTP session cookies, and operational logs store **0 bytes of student personal data**. Students onboard using anonymous procedurally generated callsigns (`Adjective-Noun-Code`) and 4-word recovery passphrases. Real names, email addresses, phone numbers, and Russian national identifiers (SNILS) are never requested, stored, or processed.
+5. **Client-Side Zero-Knowledge Encryption (WebCrypto E2EE):** Any sensitive student submissions, private teacher remarks, rubric annotations, and canvas drawings are encrypted directly in the browser via WebCrypto **AES-256-GCM + ECDH P-256** using class PIN-derived keys. The backend server acts solely as a blinded content-addressable storage (CAS) engine.
+6. **100% Offline Interactive School Board (Excalidraw 0.18.1):** Replaces the discontinued Google Jamboard with an integrated, air-gapped whiteboard featuring zero external CDN dependencies, complete Russian localization, and a dedicated Teacher Tools panel (`linear ruler`, `protractor`, `set square`, `compass`, and authentic Russian notebook rulings: 5mm grid, 1st-grade slanted guidelines, wide lines, music staves, and coordinate planes).
+7. **Two-Pane SpeedGrader & Simonov Pedagogical Analytics:** Split-screen SpeedGrader with freehand vector annotations, rubrics, comment bank, Russian 5-point scale translation, and exact mathematical evaluation of **СОУ** (Degree of Student Learning), **КЗ** (Quality of Knowledge), and **Усп** (Absolute Performance).
 
 ---
 
 ### Google Classroom vs. BormoClass
 
-| Architectural Dimension | Google Classroom | BormoClass |
+| Architectural Dimension | Google Classroom | BormoClass (Self-Hosted Open Source Alternative) |
 | :--- | :--- | :--- |
-| **Data Sovereignty & Privacy** | Corporate cloud (Google Cloud). Mandatory student Google Workspace accounts with real PII. | **100% Self-Hosted & Sovereign**. Zero-PII (0 bytes PII on server) with strict 152-FZ regex gates. |
-| **Data Encryption at Rest** | Server-side transparent encryption under Google-managed cloud KMS keys. | **Client-Side Zero-Knowledge WebCrypto E2EE** (AES-256-GCM + ECDH P-256). Server is blinded. |
-| **Interactive School Whiteboard** | Deprecated / Discontinued Google Jamboard; requires external 3rd-party SaaS boards. | **Built-in Offline Excalidraw 0.18.1** with teacher geometry tools & Russian notebook rulings. |
+| **Hosting & Deployment** | Proprietary SaaS cloud (Google Cloud). Closed-source, subject to sanctions, outages, and regional blocks. | **100% Self-Hosted & Air-Gap Ready**. Run on your own school server, VPS, or LAN via Docker Compose in 60 seconds. |
+| **Licensing & Cost** | Commercial subscription tiers (Google Workspace for Education Plus); corporate vendor lock-in. | **100% Free & Open Source (Apache-2.0)**. Zero subscription fees, zero ads, zero paywalls, zero telemetry. |
+| **Data Sovereignty & Privacy** | Centralized corporate cloud. Mandatory student Google accounts with real personal data (PII). | **Absolute Zero-PII Standard**. 0 bytes student PII on server; strict 152-FZ regex firewall (`pii_guard.py`). |
+| **Data Encryption at Rest** | Server-side transparent encryption under Google-managed cloud KMS keys. | **Client-Side Zero-Knowledge WebCrypto E2EE** (AES-256-GCM + ECDH P-256). Backend is blinded. |
+| **Google Classroom API v1** | Official cloud API gated by Google Cloud Console project approvals and OAuth2 scopes. | **Full Google Classroom v1 REST API Parity (105 methods)** implemented locally under `/v1/`. |
+| **Interactive School Whiteboard** | Deprecated / Discontinued Google Jamboard; requires external 3rd-party paid SaaS boards. | **Built-in Offline Excalidraw 0.18.1** with teacher geometry tools & Russian notebook rulings. |
 | **Grading & SpeedGrader** | Basic grading pane; document annotations require Google Docs viewer integration. | **Full Split-Screen SpeedGrader** with vector canvas annotations, rubrics, comment bank & AST anti-plagiarism. |
 | **Educational Analytics** | Raw arithmetic point averages; no localized pedagogical metrics. | **V. P. Simonov's Methodology** with real-time computation of **СОУ**, **КЗ**, and **Усп** percentages. |
 | **Testing & Practice Sets** | Google Forms redirect; external tab switching with zero focus-loss awareness. | **Integrated Quiz Player (6 question types)** with tab visibility monitoring and hint-enabled Practice Sets. |
 | **National Standards & SanPiN** | None. No awareness of national educational or hygienic regulations. | **Grade 1 homework ban** (`grade_level == 1`) and live **SanPiN 1.2.3685-21 screen-time timer**. |
-| **Licensing & Cost** | Subscription tiers (Google Workspace for Education Plus); corporate vendor lock-in. | **100% Free & Open Source (Apache-2.0)**. Zero ads, zero paywalls, zero telemetry. |
 
 ---
 
@@ -489,7 +496,7 @@ python3 scripts/e2e_smoke.py
 
 ## 📡 REST API & Google Classroom Compatibility
 
-Every standard Google Classroom v1 endpoint is supported under the `/v1/` prefix:
+BormoClass serves as a true drop-in self-hosted replacement for Google Classroom, featuring full protocol parity with the official Google Classroom v1 REST API (all 105 discovery methods registered under the `/v1/` prefix):
 
 | Endpoint Resource | HTTP Method | Description |
 | :--- | :--- | :--- |
