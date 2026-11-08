@@ -6,7 +6,7 @@
 
 # BormoClass
 
-**Self-Hosted Open Source Google Classroom Alternative & Sovereign Zero-PII LMS**<br>
+**Self-Hosted Open Source Google Classroom Alternative & Autonomous Zero-PII LMS**<br>
 Full Google Classroom v1 REST API parity (105 methods), 100% offline interactive school whiteboard, split-screen SpeedGrader, Simonov educational analytics, client-side WebCrypto AES-256-GCM encryption, and 0 bytes of server-side personal data under Russian Federal Law 152-FZ.
 
 [![CI](https://github.com/Bormotoon/BormoClass/actions/workflows/ci.yml/badge.svg)](https://github.com/Bormotoon/BormoClass/actions/workflows/ci.yml)
@@ -54,9 +54,9 @@ Full Google Classroom v1 REST API parity (105 methods), 100% offline interactive
 
 ## 💡 Why BormoClass?
 
-Modern educational institutions face a critical challenge: proprietary cloud learning management systems (LMS) such as Google Classroom, Microsoft Teams, and Canvas offer streamlined assignment workflows, but they demand exhaustive personal data collection, impose heavy vendor lock-in, and rely on centralized corporate cloud infrastructure. School-wide email accounts, legal student names, phone numbers, surveillance telemetry, and behavioral footprints are routinely uploaded to overseas cloud silos. In many jurisdictions — including the Russian Federation under **Federal Law 152-FZ** ("On Personal Data") and **Federal Law 273-FZ** ("On Education in the Russian Federation") — institutional data sovereignty and privacy mandates make reliance on proprietary US cloud services legally problematic or impossible.
+Modern educational institutions face a critical challenge: proprietary cloud learning management systems (LMS) such as Google Classroom, Microsoft Teams, and Canvas offer streamlined assignment workflows, but they demand exhaustive personal data collection, impose heavy vendor lock-in, and rely on centralized corporate cloud infrastructure. School-wide email accounts, legal student names, phone numbers, surveillance telemetry, and behavioral footprints are routinely uploaded to overseas cloud silos. In many jurisdictions — including the Russian Federation under **Federal Law 152-FZ** ("On Personal Data") and **Federal Law 273-FZ** ("On Education in the Russian Federation") — institutional data privacy and digital independence mandates make reliance on proprietary US cloud services legally problematic or impossible.
 
-**BormoClass** is the **first sovereign, self-hosted, 100% free and open-source alternative to Google Classroom**:
+**BormoClass** is the **first completely autonomous, self-hosted, 100% free and open-source alternative to Google Classroom**:
 
 1. **True Self-Hosting & 100% Open Source (Apache-2.0):** Run BormoClass entirely on your institution's own servers, school VPS, or air-gapped local network. You own 100% of your data and infrastructure. Zero licensing fees, zero ads, zero telemetry, and zero risk of cloud account deplatforming or service sunset.
 2. **Drop-In Google Classroom Experience:** Built around the iconic 4-screen layout that educators and students already master: **Stream**, **Classwork**, **People**, and **Grades** (*Лента*, *Задания*, *Пользователи*, *Оценки*). Teachers organize materials by topic, publish assignments with rubrics and deadlines, conduct class discussions, and grade submissions with zero learning curve.
@@ -74,7 +74,7 @@ Modern educational institutions face a critical challenge: proprietary cloud lea
 | :--- | :--- | :--- |
 | **Hosting & Deployment** | Proprietary SaaS cloud (Google Cloud). Closed-source, subject to sanctions, outages, and regional blocks. | **100% Self-Hosted & Air-Gap Ready**. Run on your own school server, VPS, or LAN via Docker Compose in 60 seconds. |
 | **Licensing & Cost** | Commercial subscription tiers (Google Workspace for Education Plus); corporate vendor lock-in. | **100% Free & Open Source (Apache-2.0)**. Zero subscription fees, zero ads, zero paywalls, zero telemetry. |
-| **Data Sovereignty & Privacy** | Centralized corporate cloud. Mandatory student Google accounts with real personal data (PII). | **Absolute Zero-PII Standard**. 0 bytes student PII on server; strict 152-FZ regex firewall (`pii_guard.py`). |
+| **Data Privacy & 152-FZ** | Centralized corporate cloud. Mandatory student Google accounts with real personal data (PII). | **Absolute Zero-PII Standard**. 0 bytes student PII on server; strict 152-FZ regex firewall (`pii_guard.py`). |
 | **Data Encryption at Rest** | Server-side transparent encryption under Google-managed cloud KMS keys. | **Client-Side Zero-Knowledge WebCrypto E2EE** (AES-256-GCM + ECDH P-256). Backend is blinded. |
 | **Google Classroom API v1** | Official cloud API gated by Google Cloud Console project approvals and OAuth2 scopes. | **Full Google Classroom v1 REST API Parity (105 methods)** implemented locally under `/v1/`. |
 | **Interactive School Whiteboard** | Deprecated / Discontinued Google Jamboard; requires external 3rd-party paid SaaS boards. | **Built-in Offline Excalidraw 0.18.1** with teacher geometry tools & Russian notebook rulings. |
@@ -525,7 +525,7 @@ Contributions are welcomed! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) g
 - **Security Vulnerability?** Please read [SECURITY.md](SECURITY.md) and report vulnerabilities privately to `security@pedobraz.ru` or `bormotoon@gmail.com`.
 
 ### Acknowledgements
-- **[Excalidraw](https://excalidraw.com/) (MIT License):** Custom offline adaptation for sovereign school classrooms.
+- **[Excalidraw](https://excalidraw.com/) (MIT License):** Custom offline adaptation for autonomous school classrooms.
 - **[FastAPI](https://fastapi.tiangolo.com/):** Modern asynchronous web framework for Python.
 - **[SQLite](https://sqlite.org/):** High-reliability embedded database engine.
 

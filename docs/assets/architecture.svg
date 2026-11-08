@@ -23,7 +23,7 @@
   <rect x="0" y="0" width="1280" height="68" rx="20" fill="url(#hdrArch)"/>
   <rect x="0" y="48" width="1280" height="20" fill="url(#hdrArch)"/>
   <rect x="28" y="18" width="6" height="32" rx="3" fill="#f57300"/>
-  <text x="48" y="38" fill="#ffffff" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="21" font-weight="800">BormoClass — End-to-End Sovereign System Architecture</text>
+  <text x="48" y="38" fill="#ffffff" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="21" font-weight="800">BormoClass — End-to-End Autonomous System Architecture</text>
   <text x="48" y="56" fill="#94a3b8" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="12.5" font-weight="600">Zero-CDN Browser SPA  →  Caddy TLS/SSE Edge  →  FastAPI Core &amp; Google Classroom v1 Layer  →  SQLite WAL &amp; SHA-256 CAS</text>
 
   <!-- Legend Pills in Header -->
@@ -169,7 +169,7 @@
   <text x="924" y="573" fill="#c2410c" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700">SHA-256 Deduplicated Blobs</text>
 
   <!-- ======================================================================= -->
-  <!-- TIER 4: SOVEREIGN LOCAL STORAGE (y=588, h=110)                          -->
+  <!-- TIER 4: AUTONOMOUS LOCAL STORAGE (y=588, h=110)                          -->
   <!-- ======================================================================= -->
   <g transform="translate(24, 588)" font-family="system-ui, sans-serif">
     <!-- Left Storage: SQLite WAL -->

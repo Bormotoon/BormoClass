@@ -576,7 +576,7 @@ class BormoClassApp {
           Self-Hosted Open Source аналог <span style="color: var(--md-sys-color-primary);">Google Classroom</span>
         </h1>
         <p style="font-size: 1.2rem; color: var(--md-sys-color-on-surface-variant); margin-bottom: 2rem;">
-          Свободная суверенная LMS со встроенной интерактивной доской: 100% паритет с Google Classroom v1 API, 0 байт персональных данных на сервере (152-ФЗ РФ), SpeedGrader, SQLite WAL и нулевые внешние CDN.
+          Свободная автономная LMS со встроенной интерактивной доской: 100% паритет с Google Classroom v1 API, 0 байт персональных данных на сервере (152-ФЗ РФ), SpeedGrader, SQLite WAL и нулевые внешние CDN.
         </p>
         <div style="display: flex; gap: 1rem; justify-content: center;">
           <button class="btn btn-primary" id="heroRegBtn" style="padding: 0.8rem 2rem; font-size: 1.1rem;">Начать работу</button>
