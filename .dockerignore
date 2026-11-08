@@ -9,3 +9,5 @@ __pycache__
 *.sqlite*
 data/
 .env
+app/static/passport/portraits/
+tests/e2e_results/

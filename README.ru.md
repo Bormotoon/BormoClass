@@ -9,7 +9,7 @@
 **Суверенная Zero-PII платформа управления школьным классом, SpeedGrader и 100% автономная интерактивная доска**<br>
 Полная совместимость с Google Classroom v1 REST API, педагогическая аналитика по В. П. Симонову, клиентское WebCrypto AES-256-GCM шифрование и 0 байт персональных данных по 152-ФЗ РФ.
 
-[![CI](https://img.shields.io/badge/CI-45%20passed-brightgreen.svg?logo=github-actions&logoColor=white)](tests/)
+[![CI](https://github.com/Bormotoon/BormoClass/actions/workflows/ci.yml/badge.svg)](https://github.com/Bormotoon/BormoClass/actions/workflows/ci.yml)
 [![Лицензия: Apache-2.0](https://img.shields.io/badge/%D0%BB%D0%B8%D1%86%D0%B5%D0%BD%D0%B7%D0%B8%D1%8F-Apache--2.0-blue.svg)](LICENSE)
 [![Zero-PII: 152--ФЗ РФ](https://img.shields.io/badge/Zero--PII-152--%D0%A4%D0%97%20%D0%A0%D0%A4-00A86B.svg)](docs/assets/zero-pii-flow.svg)
 [![Шифрование: WebCrypto AES--256--GCM](https://img.shields.io/badge/%D1%88%D0%B8%D1%84%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5-AES--256--GCM%20%2B%20ECDH-990000.svg)](app/static/js/e2ee-crypto.js)
