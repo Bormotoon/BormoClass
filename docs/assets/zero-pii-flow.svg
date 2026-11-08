@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 560" width="1280" height="560" role="img" aria-label="Zero-PII 152-FZ and Zero-Knowledge E2EE Security Pipeline">
+  <defs>
+    <marker id="flowArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#f57300"/>
+    </marker>
+    <linearGradient id="secHdr" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Card -->
+  <rect x="0" y="0" width="1280" height="560" rx="20" fill="#fff8f5"/>
+  <rect x="1.5" y="1.5" width="1277" height="557" rx="18.5" fill="none" stroke="#e2e8f0" stroke-width="2"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="1280" height="70" rx="20" fill="url(#secHdr)"/>
+  <rect x="0" y="50" width="1280" height="20" fill="url(#secHdr)"/>
+  <rect x="28" y="19" width="6" height="32" rx="3" fill="#22c55e"/>
+  <text x="48" y="39" fill="#ffffff" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="21" font-weight="800">Zero-PII (152-ФЗ РФ) &amp; Zero-Knowledge WebCrypto Security Pipeline</text>
+  <text x="48" y="57" fill="#94a3b8" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="12.5" font-weight="600">Architectural guarantee: 0 bytes of names, emails, phone numbers, SNILS, or plaintext student works ever reach SQLite or disk</text>
+
+  <rect x="1040" y="19" width="212" height="32" rx="16" fill="#052e16" stroke="#22c55e" stroke-width="1.3"/>
+  <text x="1146" y="40" text-anchor="middle" fill="#86efac" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="800">SERVER PII = 0 BYTES</text>
+
+  <!-- Trust Boundary Banner -->
+  <rect x="24" y="88" width="912" height="30" rx="8" fill="#dcfce7" stroke="#86efac" stroke-width="1.2"/>
+  <text x="480" y="108" text-anchor="middle" fill="#14532d" font-family="system-ui, sans-serif" font-size="12" font-weight="800">CLIENT TRUST ZONE (Browser Memory &amp; WebCrypto SubtleCrypto API)</text>
+
+  <rect x="954" y="88" width="302" height="30" rx="8" fill="#fee2e2" stroke="#fca5a5" stroke-width="1.2"/>
+  <text x="1105" y="108" text-anchor="middle" fill="#7f1d1d" font-family="system-ui, sans-serif" font-size="12" font-weight="800">UNTRUSTED STORAGE ZONE (Server)</text>
+
+  <!-- ======================================================================= -->
+  <!-- 4 HORIZONTAL PIPELINE STAGES (y=132, h=308)                             -->
+  <!-- ======================================================================= -->
+
+  <!-- STAGE 1: Callsign & Recovery (x=24, w=284) -->
+  <g transform="translate(24, 132)" font-family="system-ui, sans-serif">
+    <rect x="0" y="0" width="284" height="308" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+    <rect x="0" y="0" width="284" height="42" rx="16" fill="#0f172a"/>
+    <rect x="0" y="26" width="284" height="16" fill="#0f172a"/>
+    <text x="16" y="27" fill="#fb923c" font-size="13" font-weight="800">STAGE 1 • CALLSIGN PASSPORT</text>
+
+    <text x="16" y="66" fill="#0f172a" font-size="13" font-weight="800">Pseudonymous Handle Formula</text>
+    <rect x="16" y="76" width="252" height="52" rx="10" fill="#fff8f5" stroke="#fdba74"/>
+    <text x="142" y="97" text-anchor="middle" fill="#c2410c" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="800">Бодрый-Енот-428</text>
+    <text x="142" y="117" text-anchor="middle" fill="#64748b" font-size="11">250 Adj × 250 Nouns × Code (56.2M+)</text>
+
+    <text x="16" y="152" fill="#0f172a" font-size="13" font-weight="800">4-Word Secret Recovery</text>
+    <rect x="16" y="162" width="252" height="54" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="142" y="183" text-anchor="middle" fill="#1e293b" font-family="'JetBrains Mono', monospace" font-size="11.5" font-weight="700">маяк • компас • вектор • зенит</text>
+    <text x="142" y="203" text-anchor="middle" fill="#64748b" font-size="11">512⁴ = 2³⁶ combinations (36-bit entropy)</text>
+
+    <text x="16" y="238" fill="#0f172a" font-size="13" font-weight="800">Anti-Bot &amp; Hashing</text>
+    <text x="16" y="257" fill="#334155" font-size="11.5">• PBKDF2-SHA256 (100k) &amp; scrypt</text>
+    <text x="16" y="275" fill="#334155" font-size="11.5">• HMAC ticket (≥ 2s human delay)</text>
+    <text x="16" y="293" fill="#334155" font-size="11.5">• Zero-IP sliding RateLimiter</text>
+  </g>
+
+  <!-- Arrow 1 -> 2 -->
+  <line x1="308" y1="286" x2="332" y2="286" stroke="#f57300" stroke-width="2.5" marker-end="url(#flowArrow)"/>
+
+  <!-- STAGE 2: Dual PII Guard (x=336, w=284) -->
+  <g transform="translate(336, 132)" font-family="system-ui, sans-serif">
+    <rect x="0" y="0" width="284" height="308" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+    <rect x="0" y="0" width="284" height="42" rx="16" fill="#7f1d1d"/>
+    <rect x="0" y="26" width="284" height="16" fill="#7f1d1d"/>
+    <text x="16" y="27" fill="#fecaca" font-size="13" font-weight="800">STAGE 2 • 152-ФЗ PII FIREWALL</text>
+
+    <text x="16" y="66" fill="#991b1b" font-size="13" font-weight="800">Blocked Patterns (HTTP 422)</text>
+    <g transform="translate(16, 76)" font-size="11.5">
+      <rect x="0" y="0" width="252" height="28" rx="7" fill="#fef2f2" stroke="#fca5a5"/>
+      <text x="10" y="18" fill="#991b1b" font-weight="700">✕ Full Names / FIO &amp; Initials</text>
+
+      <rect x="0" y="34" width="252" height="28" rx="7" fill="#fef2f2" stroke="#fca5a5"/>
+      <text x="10" y="52" fill="#991b1b" font-weight="700">✕ E-mail Addresses (@domain)</text>
+
+      <rect x="0" y="68" width="252" height="28" rx="7" fill="#fef2f2" stroke="#fca5a5"/>
+      <text x="10" y="86" fill="#991b1b" font-weight="700">✕ RF Phones (+7 / 8-9XX-...)</text>
+
+      <rect x="0" y="102" width="252" height="28" rx="7" fill="#fef2f2" stroke="#fca5a5"/>
+      <text x="10" y="120" fill="#991b1b" font-weight="700">✕ SNILS Numbers (XXX-XXX-XXX)</text>
+    </g>
+
+    <text x="16" y="232" fill="#0f172a" font-size="13" font-weight="800">Structural Leak Guards</text>
+    <text x="16" y="252" fill="#334155" font-size="11.5">• Free-text PARAGRAPH quizzes banned</text>
+    <text x="16" y="270" fill="#334155" font-size="11.5">• Filename scrubbed → #sha256.ext</text>
+    <text x="16" y="288" fill="#334155" font-size="11.5">• Enforced in JS + FastAPI middleware</text>
+  </g>
+
+  <!-- Arrow 2 -> 3 -->
+  <line x1="620" y1="286" x2="644" y2="286" stroke="#f57300" stroke-width="2.5" marker-end="url(#flowArrow)"/>
+
+  <!-- STAGE 3: WebCrypto E2EE & Fingerprints (x=648, w=288) -->
+  <g transform="translate(648, 132)" font-family="system-ui, sans-serif">
+    <rect x="0" y="0" width="288" height="308" rx="16" fill="#ffffff" stroke="#f57300" stroke-width="2"/>
+    <rect x="0" y="0" width="288" height="42" rx="16" fill="#c2410c"/>
+    <rect x="0" y="26" width="288" height="16" fill="#c2410c"/>
+    <text x="16" y="27" fill="#fff7ed" font-size="13" font-weight="800">STAGE 3 • WEBCRYPTO E2EE</text>
+
+    <text x="16" y="65" fill="#0f172a" font-size="12.5" font-weight="800">Key Derivation &amp; ECDH Wrapping</text>
+    <rect x="16" y="73" width="256" height="44" rx="8" fill="#fff7ed" stroke="#fdba74"/>
+    <text x="144" y="92" text-anchor="middle" fill="#9a3412" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700">AES-256-GCM Class Key</text>
+    <text x="144" y="109" text-anchor="middle" fill="#64748b" font-size="10.5">PBKDF2(PIN, salt, 100k) + ECDH P-256</text>
+
+    <text x="16" y="138" fill="#0f172a" font-size="12.5" font-weight="800">Text Envelope Specification</text>
+    <rect x="16" y="146" width="256" height="42" rx="8" fill="#0f172a"/>
+    <text x="144" y="164" text-anchor="middle" fill="#fb923c" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="700">BORMO_E2EE_V1:&lt;12B_IV&gt;:&lt;CT+Tag&gt;</text>
+    <text x="144" y="180" text-anchor="middle" fill="#94a3b8" font-size="10">Titles, instructions, submissions, comments</text>
+
+    <text x="16" y="209" fill="#0f172a" font-size="12.5" font-weight="800">Binary &amp; Canvas Blob Envelope</text>
+    <rect x="16" y="217" width="256" height="42" rx="8" fill="#0f172a"/>
+    <text x="144" y="235" text-anchor="middle" fill="#38bdf8" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="700">BC_E2EE_BLOB_V1\0 + IV + GCM</text>
+    <text x="144" y="251" text-anchor="middle" fill="#94a3b8" font-size="10">PDF scans, attachments, board scenes</text>
+
+    <text x="16" y="279" fill="#166534" font-size="11.5" font-weight="800">+ Winnowing 5-gram 32-bit Hashes</text>
+    <text x="16" y="295" fill="#475569" font-size="11">Extracted locally prior to encryption</text>
+  </g>
+
+  <!-- Vertical Trust Boundary Line between Stage 3 and Stage 4 -->
+  <line x1="945" y1="88" x2="945" y2="446" stroke="#dc2626" stroke-width="2" stroke-dasharray="6,5"/>
+  <line x1="936" y1="286" x2="954" y2="286" stroke="#f57300" stroke-width="2.5" marker-end="url(#flowArrow)"/>
+
+  <!-- STAGE 4: Blind Server Persistence & Verification (x=956, w=300) -->
+  <g transform="translate(956, 132)" font-family="system-ui, sans-serif">
+    <rect x="0" y="0" width="300" height="308" rx="16" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+    <rect x="0" y="0" width="300" height="42" rx="16" fill="#1e293b"/>
+    <rect x="0" y="26" width="300" height="16" fill="#1e293b"/>
+    <text x="16" y="27" fill="#38bdf8" font-size="13" font-weight="800">STAGE 4 • BLIND SERVER ENGINE</text>
+
+    <text x="16" y="66" fill="#f8fafc" font-size="12.5" font-weight="800">What SQLite &amp; CAS Actually Store:</text>
+    <rect x="16" y="76" width="268" height="84" rx="10" fill="#1e293b" stroke="#334155"/>
+    <text x="26" y="96" fill="#86efac" font-family="'JetBrains Mono', monospace" font-size="11">handle: &quot;Бодрый-Енот-428&quot;</text>
+    <text x="26" y="114" fill="#fb923c" font-family="'JetBrains Mono', monospace" font-size="11">title:  &quot;BORMO_E2EE_V1:k8P...&quot;</text>
+    <text x="26" y="132" fill="#38bdf8" font-family="'JetBrains Mono', monospace" font-size="11">blob:   BC_E2EE_BLOB_V1\0...</text>
+    <text x="26" y="150" fill="#cbd5e1" font-family="'JetBrains Mono', monospace" font-size="11">grade_five: 5  |  seat: 1</text>
+
+    <text x="16" y="184" fill="#f8fafc" font-size="12.5" font-weight="800">Zero-Knowledge Originality Check</text>
+    <rect x="16" y="194" width="268" height="58" rx="10" fill="#1e293b" stroke="#334155"/>
+    <text x="26" y="214" fill="#e2e8f0" font-size="11">• Compares 32-bit Winnowing k-gram sets:</text>
+    <text x="26" y="232" fill="#fdba74" font-family="'JetBrains Mono', monospace" font-size="11">  Containment = |F₁ ∩ F₂| / min(|F₁|,|F₂|)</text>
+    <text x="26" y="246" fill="#94a3b8" font-size="10.5">• Structural Python AST Jaccard check</text>
+
+    <rect x="16" y="264" width="268" height="30" rx="8" fill="#052e16" stroke="#16a34a"/>
+    <text x="150" y="284" text-anchor="middle" fill="#86efac" font-size="11.5" font-weight="700">✓ DB Leak ≠ Personal Data Breach</text>
+  </g>
+
+  <!-- Bottom Summary Strip (y=458, h=80) -->
+  <rect x="24" y="458" width="1232" height="80" rx="14" fill="#0f172a"/>
+  <g transform="translate(44, 476)" font-family="system-ui, sans-serif">
+    <text x="0" y="18" fill="#fb923c" font-size="13" font-weight="800">COMPLIANCE &amp; CRYPTOGRAPHIC INVARIANTS VERIFIED BY AUTOMATED TEST SUITE:</text>
+    <text x="0" y="42" fill="#e2e8f0" font-size="12">Zero-PII Schema: zero columns for names, emails, IPs, or phones across all 43 SQLite tables. WebCrypto E2EE envelope verified.</text>
+    <text x="1190" y="42" text-anchor="end" fill="#86efac" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700">pytest (45 tests) • PASSED</text>
+  </g>
+</svg>
