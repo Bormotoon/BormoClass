@@ -6,7 +6,7 @@
   "description": "Интерактивная доска app.педобраз.рф — тонкая обёртка вокруг @excalidraw/excalidraw",
   "license": "MIT",
   "scripts": {
-    "build": "vite build"
+    "build": "vite build && node patches/strip-cdn-fallback.mjs"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.1",
