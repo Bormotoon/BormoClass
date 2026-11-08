@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 380" width="1280" height="380" role="img" aria-label="BormoClass — Zero-PII &amp; End-to-End Encrypted Classroom Platform">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="55%" stop-color="#172033"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <radialGradient id="emberGlow" cx="22%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#f57300" stop-opacity="0.24"/>
+      <stop offset="60%" stop-color="#f57300" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff8c1a"/>
+      <stop offset="100%" stop-color="#d95b00"/>
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.98"/>
+    </linearGradient>
+    <pattern id="schoolGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#ffffff" stroke-opacity="0.045" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <!-- Outer Rounded Frame -->
+  <rect x="0" y="0" width="1280" height="380" rx="22" fill="url(#bgGrad)"/>
+  <rect x="0" y="0" width="1280" height="380" rx="22" fill="url(#schoolGrid)"/>
+  <rect x="0" y="0" width="1280" height="380" rx="22" fill="url(#emberGlow)"/>
+  <rect x="1.5" y="1.5" width="1277" height="377" rx="20.5" fill="none" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Top Ember Accent Strip -->
+  <rect x="48" y="0" width="180" height="4" rx="2" fill="#f57300"/>
+
+  <!-- Brand Emblem (x=48, y=46, 84x84) -->
+  <g transform="translate(48, 46)">
+    <rect x="0" y="0" width="84" height="84" rx="20" fill="url(#logoGrad)"/>
+    <rect x="1.5" y="1.5" width="81" height="81" rx="18.5" fill="none" stroke="#ffd2a6" stroke-opacity="0.45" stroke-width="1.5"/>
+    <!-- Stylized School Board + Shield Lock -->
+    <rect x="15" y="18" width="54" height="38" rx="6" fill="#0f172a" fill-opacity="0.9"/>
+    <line x1="22" y1="28" x2="44" y2="28" stroke="#fff8f5" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="22" y1="36" x2="38" y2="36" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round"/>
+    <!-- Traffic light dots inside board -->
+    <circle cx="24" cy="46" r="3.2" fill="#22c55e"/>
+    <circle cx="34" cy="46" r="3.2" fill="#facc15"/>
+    <circle cx="44" cy="46" r="3.2" fill="#ef4444"/>
+    <!-- Mini Lock Badge -->
+    <rect x="48" y="39" width="16" height="13" rx="3" fill="#f57300"/>
+    <path d="M52 39 V35 a4 4 0 0 1 8 0 v4" fill="none" stroke="#fff8f5" stroke-width="2.2" stroke-linecap="round"/>
+    <!-- Chalk ledge -->
+    <line x1="12" y1="63" x2="72" y2="63" stroke="#fff8f5" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Title & Release Pill -->
+  <text x="152" y="96" fill="#ffffff" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif" font-size="54" font-weight="800" letter-spacing="-1">BormoClass</text>
+
+  <g transform="translate(486, 63)">
+    <rect x="0" y="0" width="188" height="30" rx="15" fill="#f57300" fill-opacity="0.18" stroke="#f57300" stroke-width="1.2"/>
+    <text x="94" y="20" text-anchor="middle" fill="#ffb366" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="12.5" font-weight="700">SOVEREIGN LMS • v1</text>
+  </g>
+
+  <text x="154" y="125" fill="#fb923c" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif" font-size="15.5" font-weight="700" letter-spacing="0.4">ZERO-PII DIGITAL CLASSROOM  •  CLIENT-SIDE E2EE  •  AIR-GAPPED SCHOOL BOARD</text>
+
+  <!-- Bilingual Headlines -->
+  <text x="48" y="174" fill="#f8fafc" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif" font-size="19.5" font-weight="600">Self-hosted classroom platform storing 0 bytes of personal data on the server.</text>
+  <text x="48" y="202" fill="#cbd5e1" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif" font-size="15" font-weight="400">Автономная школьная LMS по стандарту Zero-PII (152-ФЗ РФ): позывные вместо ФИО,</text>
+  <text x="48" y="224" fill="#cbd5e1" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif" font-size="15" font-weight="400">клиентское WebCrypto E2EE, интерактивная карта парт, SpeedGrader и офлайн-доска.</text>
+
+  <!-- 5 Key Feature Pills (Row 1 + Row 2 for spacious legibility) -->
+  <g transform="translate(48, 260)" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif" font-size="13.5" font-weight="700">
+    <!-- Pill 1 -->
+    <rect x="0" y="0" width="186" height="36" rx="18" fill="#052e16" stroke="#22c55e" stroke-width="1.3"/>
+    <circle cx="20" cy="18" r="5" fill="#22c55e"/>
+    <text x="34" y="23" fill="#bbf7d0">Zero-PII • 152-ФЗ</text>
+
+    <!-- Pill 2 -->
+    <rect x="198" y="0" width="212" height="36" rx="18" fill="#3b1905" stroke="#f57300" stroke-width="1.3"/>
+    <circle cx="218" cy="18" r="5" fill="#f57300"/>
+    <text x="232" y="23" fill="#fed7aa">Client-Side E2EE</text>
+
+    <!-- Pill 3 -->
+    <rect x="422" y="0" width="238" height="36" rx="18" fill="#082f49" stroke="#38bdf8" stroke-width="1.3"/>
+    <circle cx="442" cy="18" r="5" fill="#38bdf8"/>
+    <text x="456" y="23" fill="#bae6fd">100% Offline / Zero-CDN</text>
+
+    <!-- Pill 4 -->
+    <rect x="0" y="48" width="252" height="36" rx="18" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.3"/>
+    <circle cx="20" cy="66" r="5" fill="#818cf8"/>
+    <text x="34" y="71" fill="#e0e7ff">Google Classroom v1 API</text>
+
+    <!-- Pill 5 -->
+    <rect x="264" y="48" width="308" height="36" rx="18" fill="#3b2506" stroke="#f59e0b" stroke-width="1.3"/>
+    <circle cx="284" cy="66" r="5" fill="#f59e0b"/>
+    <text x="298" y="71" fill="#fef3c7">Built-in Excalidraw School Board</text>
+  </g>
+
+  <!-- Right Telemetry Preview Card (x=845, y=34, w=390, h=312) -->
+  <g transform="translate(845, 34)">
+    <rect x="0" y="0" width="390" height="312" rx="18" fill="url(#cardGrad)" stroke="#334155" stroke-width="1.5"/>
+    <!-- Card Header -->
+    <rect x="0" y="0" width="390" height="46" rx="18" fill="#f57300" fill-opacity="0.14"/>
+    <line x1="0" y1="46" x2="390" y2="46" stroke="#334155" stroke-width="1"/>
+    <circle cx="22" cy="23" r="5.5" fill="#f57300"/>
+    <text x="36" y="28" fill="#fff8f5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="13.5" font-weight="700">8А — Информатика и ИКТ</text>
+    <rect x="284" y="11" width="90" height="24" rx="12" fill="#0f172a" stroke="#f57300" stroke-width="1"/>
+    <text x="329" y="27" text-anchor="middle" fill="#ffb366" font-family="'JetBrains Mono', monospace" font-size="11.5" font-weight="700">PIN 48291</text>
+
+    <!-- Zero-PII Passport Row -->
+    <rect x="18" y="62" width="354" height="52" rx="10" fill="#0f172a" stroke="#1e293b" stroke-width="1.2"/>
+    <text x="32" y="82" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11" font-weight="700">ПАСПОРТ • ZERO-PII CALLSIGN</text>
+    <text x="32" y="102" fill="#f8fafc" font-family="'JetBrains Mono', monospace" font-size="13.5" font-weight="700">@Мудрый-Филин-519</text>
+    <rect x="246" y="75" width="112" height="24" rx="6" fill="#052e16" stroke="#16a34a" stroke-width="1"/>
+    <text x="302" y="91" text-anchor="middle" fill="#86efac" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700">0 BYTES PII</text>
+
+    <!-- E2EE Cipher Envelope Row -->
+    <rect x="18" y="124" width="354" height="52" rx="10" fill="#0f172a" stroke="#1e293b" stroke-width="1.2"/>
+    <text x="32" y="144" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11" font-weight="700">WEBCRYPTO ENVELOPE • AES-256-GCM + ECDH P-256</text>
+    <text x="32" y="164" fill="#fb923c" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="600">BORMO_E2EE_V1:9xK2mP_qL4vN:7cR8tW...==</text>
+
+    <!-- Live Classroom Traffic Light (SSE) -->
+    <rect x="18" y="186" width="354" height="50" rx="10" fill="#0f172a" stroke="#1e293b" stroke-width="1.2"/>
+    <text x="32" y="205" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11" font-weight="700">СВЕТОФОР ПОНИМАНИЯ • 20 ПАРТ ОНЛАЙН (SSE)</text>
+    <circle cx="38" cy="222" r="5.5" fill="#22c55e"/>
+    <text x="50" y="226" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700">Понятно: 15</text>
+    <circle cx="152" cy="222" r="5.5" fill="#facc15"/>
+    <text x="164" y="226" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700">Вопрос: 3</text>
+    <circle cx="256" cy="222" r="5.5" fill="#ef4444"/>
+    <text x="268" y="226" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700">Помощь: 2</text>
+
+    <!-- Simonov SOU Metrics Footer -->
+    <g transform="translate(18, 248)" font-family="system-ui, sans-serif">
+      <rect x="0" y="0" width="112" height="48" rx="10" fill="#052e16" fill-opacity="0.7" stroke="#16a34a" stroke-width="1"/>
+      <text x="56" y="18" text-anchor="middle" fill="#86efac" font-size="10.5" font-weight="700">УСПЕВАЕМОСТЬ</text>
+      <text x="56" y="38" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="800">100.0%</text>
+
+      <rect x="121" y="0" width="112" height="48" rx="10" fill="#172554" fill-opacity="0.85" stroke="#3b82f6" stroke-width="1"/>
+      <text x="177" y="18" text-anchor="middle" fill="#93c5fd" font-size="10.5" font-weight="700">КАЧЕСТВО (КЗ)</text>
+      <text x="177" y="38" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="800">78.9%</text>
+
+      <rect x="242" y="0" width="112" height="48" rx="10" fill="#431407" fill-opacity="0.85" stroke="#f57300" stroke-width="1"/>
+      <text x="298" y="18" text-anchor="middle" fill="#fdba74" font-size="10.5" font-weight="700">СОУ СИМОНОВА</text>
+      <text x="298" y="38" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="800">74.2%</text>
+    </g>
+  </g>
+</svg>
