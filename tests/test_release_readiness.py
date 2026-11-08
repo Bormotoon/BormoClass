@@ -73,7 +73,15 @@ def test_2_passport_dictionary_and_rate_limit(client):
     assert "официального словаря" in bad_reg.json()["detail"]
 
     # Успешная регистрация с официальным словарным позывным
-    good_handle = f"Бодрый-Енот-{secrets.randbelow(800) + 100}"
+    with db_session() as conn:
+        for _ in range(1000):
+            code = secrets.randbelow(9000) + 1000
+            candidate = f"Бодрый-Енот-{code}"
+            if not conn.execute("SELECT 1 FROM users WHERE handle = ?", (candidate,)).fetchone():
+                good_handle = candidate
+                break
+        else:
+            good_handle = f"Бодрый-Енот-9999"
     good_reg = client.post("/api/passport/register", json={
         "role": "student",
         "password": "Password123!",
