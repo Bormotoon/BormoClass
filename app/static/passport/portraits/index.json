@@ -1,0 +1,1356 @@
+{
+ "size": 512,
+ "path": "{race}/{class}/{body}/{n:02d}.jpg",
+ "races": {
+  "human": {
+   "name": "ЧЕЛОВЕК",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 30,
+     "female": 30
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 28,
+     "female": 27
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 30,
+     "female": 30
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 30,
+     "female": 30
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 30,
+     "female": 30
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 30,
+     "female": 30
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 30,
+     "female": 30
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 30,
+     "female": 30
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 30,
+     "female": 30
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 29,
+     "female": 27
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 30,
+     "female": 30
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 30,
+     "female": 30
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 29,
+     "female": 30
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 30,
+     "female": 30
+    }
+   }
+  },
+  "elf": {
+   "name": "ЭЛЬФ",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 27,
+     "female": 30
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 30,
+     "female": 29
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 30,
+     "female": 30
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 30,
+     "female": 30
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 30,
+     "female": 29
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 30,
+     "female": 30
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 30,
+     "female": 30
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 30,
+     "female": 30
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 30,
+     "female": 30
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 30,
+     "female": 30
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 30,
+     "female": 30
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 28,
+     "female": 30
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 30,
+     "female": 30
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 30,
+     "female": 30
+    }
+   }
+  },
+  "dwarf": {
+   "name": "ДВАРФ",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 30,
+     "female": 29
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 26,
+     "female": 25
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 29,
+     "female": 30
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 30,
+     "female": 28
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 30,
+     "female": 30
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 29,
+     "female": 30
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 29,
+     "female": 29
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 29,
+     "female": 29
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 29,
+     "female": 30
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 27,
+     "female": 20
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 27,
+     "female": 27
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 26,
+     "female": 30
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 30,
+     "female": 29
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 29,
+     "female": 28
+    }
+   }
+  },
+  "halfling": {
+   "name": "ПОЛУРОСЛИК",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 18,
+     "female": 29
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 30,
+     "female": 30
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 29,
+     "female": 30
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 28,
+     "female": 30
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 30,
+     "female": 30
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 30,
+     "female": 30
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 27,
+     "female": 24
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 30,
+     "female": 28
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 29,
+     "female": 29
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 28,
+     "female": 30
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 29,
+     "female": 28
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 30,
+     "female": 30
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 30,
+     "female": 28
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 28,
+     "female": 30
+    }
+   }
+  },
+  "gnome": {
+   "name": "ГНОМ",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 16,
+     "female": 17
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 30,
+     "female": 30
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 30,
+     "female": 30
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 28,
+     "female": 26
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 30,
+     "female": 29
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 29,
+     "female": 30
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 30,
+     "female": 23
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 30,
+     "female": 26
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 30,
+     "female": 26
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 28,
+     "female": 26
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 30,
+     "female": 28
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 29,
+     "female": 28
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 30,
+     "female": 27
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 28,
+     "female": 27
+    }
+   }
+  },
+  "dragonborn": {
+   "name": "ДРАКОНОРОЖДЁННЫЙ",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 30,
+     "female": 30
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 30,
+     "female": 29
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 30,
+     "female": 30
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 30,
+     "female": 29
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 30,
+     "female": 29
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 29,
+     "female": 29
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 30,
+     "female": 30
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 30,
+     "female": 28
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 30,
+     "female": 30
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 30,
+     "female": 30
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 30,
+     "female": 30
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 30,
+     "female": 30
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 29,
+     "female": 30
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 30,
+     "female": 30
+    }
+   }
+  },
+  "tiefling": {
+   "name": "ТИФЛИНГ",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 30,
+     "female": 30
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 30,
+     "female": 30
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 30,
+     "female": 30
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 30,
+     "female": 30
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 30,
+     "female": 30
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 30,
+     "female": 30
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 30,
+     "female": 30
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 30,
+     "female": 30
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 30,
+     "female": 30
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 30,
+     "female": 30
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 30,
+     "female": 30
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 30,
+     "female": 30
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 30,
+     "female": 30
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 30,
+     "female": 30
+    }
+   }
+  },
+  "aasimar": {
+   "name": "ААСИМАР",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 30,
+     "female": 30
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 30,
+     "female": 30
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 30,
+     "female": 30
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 30,
+     "female": 30
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 29,
+     "female": 30
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 30,
+     "female": 30
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 30,
+     "female": 30
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 30,
+     "female": 30
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 30,
+     "female": 30
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 30,
+     "female": 30
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 30,
+     "female": 30
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 30,
+     "female": 30
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 30,
+     "female": 30
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 30,
+     "female": 30
+    }
+   }
+  },
+  "goliath": {
+   "name": "ГОЛИАФ",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 30,
+     "female": 29
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 28,
+     "female": 27
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 30,
+     "female": 27
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 30,
+     "female": 29
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 30,
+     "female": 30
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 30,
+     "female": 29
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 30,
+     "female": 30
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 30,
+     "female": 30
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 30,
+     "female": 30
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 30,
+     "female": 30
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 30,
+     "female": 30
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 27,
+     "female": 27
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 30,
+     "female": 30
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 30,
+     "female": 28
+    }
+   }
+  },
+  "orc": {
+   "name": "ОРК",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 30,
+     "female": 30
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 25,
+     "female": 29
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 30,
+     "female": 24
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 30,
+     "female": 25
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 29,
+     "female": 30
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 30,
+     "female": 30
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 30,
+     "female": 29
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 30,
+     "female": 29
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 30,
+     "female": 29
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 29,
+     "female": 23
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 29,
+     "female": 25
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 28,
+     "female": 25
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 29,
+     "female": 30
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 30,
+     "female": 29
+    }
+   }
+  },
+  "goblin": {
+   "name": "ГОБЛИН",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 28,
+     "female": 30
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 30,
+     "female": 28
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 30,
+     "female": 27
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 30,
+     "female": 28
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 30,
+     "female": 30
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 30,
+     "female": 30
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 30,
+     "female": 28
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 30,
+     "female": 30
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 30,
+     "female": 30
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 30,
+     "female": 26
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 30,
+     "female": 27
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 30,
+     "female": 30
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 30,
+     "female": 29
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 30,
+     "female": 30
+    }
+   }
+  },
+  "troll": {
+   "name": "ТРОЛЛЬ",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 30,
+     "female": 30
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 29,
+     "female": 29
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 30,
+     "female": 30
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 30,
+     "female": 28
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 30,
+     "female": 30
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 30,
+     "female": 29
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 30,
+     "female": 29
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 30,
+     "female": 29
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 30,
+     "female": 30
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 30,
+     "female": 30
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 30,
+     "female": 30
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 30,
+     "female": 30
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 30,
+     "female": 28
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 30,
+     "female": 30
+    }
+   }
+  },
+  "lizard": {
+   "name": "ЯЩЕР",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 28,
+     "female": 27
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 30,
+     "female": 29
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 30,
+     "female": 30
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 29,
+     "female": 30
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 29,
+     "female": 30
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 29,
+     "female": 30
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 30,
+     "female": 30
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 24,
+     "female": 28
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 30,
+     "female": 30
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 30,
+     "female": 30
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 30,
+     "female": 30
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 30,
+     "female": 30
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 30,
+     "female": 30
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 30,
+     "female": 30
+    }
+   }
+  },
+  "rabbit": {
+   "name": "КРОЛИК",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 28,
+     "female": 30
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 30,
+     "female": 29
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 30,
+     "female": 30
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 30,
+     "female": 30
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 30,
+     "female": 29
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 30,
+     "female": 30
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 30,
+     "female": 30
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 28,
+     "female": 30
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 30,
+     "female": 30
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 30,
+     "female": 30
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 30,
+     "female": 30
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 30,
+     "female": 30
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 30,
+     "female": 30
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 30,
+     "female": 30
+    }
+   }
+  },
+  "alien": {
+   "name": "ПРИШЕЛЕЦ",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 5,
+     "female": 26
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 17,
+     "female": 23
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 20,
+     "female": 16
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 22,
+     "female": 27
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 12,
+     "female": 20
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 20,
+     "female": 26
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 5,
+     "female": 21
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 21,
+     "female": 20
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 23,
+     "female": 27
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 30,
+     "female": 30
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 25,
+     "female": 30
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 23,
+     "female": 27
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 23,
+     "female": 25
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 25,
+     "female": 30
+    }
+   }
+  },
+  "golem": {
+   "name": "ГОЛЕМ",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 29,
+     "female": 24
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 30,
+     "female": 27
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 30,
+     "female": 30
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 29,
+     "female": 27
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 30,
+     "female": 30
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 30,
+     "female": 27
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 30,
+     "female": 30
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 30,
+     "female": 29
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 30,
+     "female": 30
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 30,
+     "female": 28
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 30,
+     "female": 29
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 30,
+     "female": 29
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 30,
+     "female": 30
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 30,
+     "female": 26
+    }
+   }
+  },
+  "skeleton": {
+   "name": "СКЕЛЕТ",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 30,
+     "female": 29
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 30,
+     "female": 30
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 30,
+     "female": 30
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 30,
+     "female": 30
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 30,
+     "female": 30
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 30,
+     "female": 29
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 30,
+     "female": 30
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 30,
+     "female": 30
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 30,
+     "female": 30
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 30,
+     "female": 30
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 30,
+     "female": 30
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 30,
+     "female": 30
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 30,
+     "female": 30
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 30,
+     "female": 30
+    }
+   }
+  },
+  "vampire": {
+   "name": "ВАМПИР",
+   "classes": {
+    "barbarian": {
+     "name": "ВАРВАР",
+     "male": 20,
+     "female": 27
+    },
+    "bard": {
+     "name": "БАРД",
+     "male": 30,
+     "female": 30
+    },
+    "cleric": {
+     "name": "ЖРЕЦ",
+     "male": 30,
+     "female": 30
+    },
+    "druid": {
+     "name": "ДРУИД",
+     "male": 30,
+     "female": 30
+    },
+    "fighter": {
+     "name": "ВОИН",
+     "male": 29,
+     "female": 30
+    },
+    "monk": {
+     "name": "МОНАХ",
+     "male": 29,
+     "female": 27
+    },
+    "paladin": {
+     "name": "ПАЛАДИН",
+     "male": 28,
+     "female": 29
+    },
+    "ranger": {
+     "name": "СЛЕДОПЫТ",
+     "male": 27,
+     "female": 25
+    },
+    "rogue": {
+     "name": "ПЛУТ",
+     "male": 27,
+     "female": 29
+    },
+    "sorcerer": {
+     "name": "ЧАРОДЕЙ",
+     "male": 30,
+     "female": 30
+    },
+    "warlock": {
+     "name": "КОЛДУН",
+     "male": 30,
+     "female": 30
+    },
+    "wizard": {
+     "name": "ВОЛШЕБНИК",
+     "male": 30,
+     "female": 30
+    },
+    "artificer": {
+     "name": "ИЗОБРЕТАТЕЛЬ",
+     "male": 29,
+     "female": 29
+    },
+    "pirate": {
+     "name": "ПИРАТ",
+     "male": 29,
+     "female": 28
+    }
+   }
+  }
+ }
+}

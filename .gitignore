@@ -16,7 +16,8 @@ build/
 *.egg-info/
 .env
 data/
-app/static/passport/portraits/
+app/static/passport/portraits/*
+!app/static/passport/portraits/index.json
 tests/e2e_results/
 
 node_modules/
