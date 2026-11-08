@@ -9,7 +9,7 @@
 **Sovereign, Zero-PII Classroom Management System, SpeedGrader & 100% Offline Interactive Whiteboard**<br>
 Full Google Classroom v1 REST API parity, Simonov educational analytics, client-side WebCrypto AES-256-GCM encryption, and 0 bytes of server-side personal data under Russian Federal Law 152-FZ.
 
-[![CI](https://img.shields.io/badge/CI-45%20passed-brightgreen.svg?logo=github-actions&logoColor=white)](tests/)
+[![CI](https://github.com/Bormotoon/BormoClass/actions/workflows/ci.yml/badge.svg)](https://github.com/Bormotoon/BormoClass/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Zero-PII: 152--FZ RF](https://img.shields.io/badge/Zero--PII-152--%D0%A4%D0%97%20%D0%A0%D0%A4-00A86B.svg)](docs/assets/zero-pii-flow.svg)
 [![Encryption: WebCrypto AES--256--GCM](https://img.shields.io/badge/Encryption-AES--256--GCM%20%2B%20ECDH-990000.svg)](app/static/js/e2ee-crypto.js)

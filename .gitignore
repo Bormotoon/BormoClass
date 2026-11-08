@@ -19,3 +19,5 @@ data/
 app/static/passport/portraits/
 tests/e2e_results/
 
+node_modules/
+board-src/dist/
