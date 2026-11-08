@@ -113,7 +113,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="BormoClass",
-    description="Автономная платформа управления школьным классом (Zero-PII, 152-ФЗ РФ)",
+    description="Self-hosted open source аналог Google Classroom с защитой приватности Zero-PII (152-ФЗ РФ), SpeedGrader и автономной интерактивной доской",
     version="1.0.0",
     lifespan=lifespan
 )

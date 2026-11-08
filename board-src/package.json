@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Интерактивная доска app.педобраз.рф — тонкая обёртка вокруг @excalidraw/excalidraw",
+  "description": "Встроенная интерактивная школьная доска для BormoClass (self-hosted open source аналог Google Classroom) на базе @excalidraw/excalidraw",
   "license": "MIT",
   "scripts": {
     "build": "vite build && node patches/strip-cdn-fallback.mjs"

@@ -571,12 +571,12 @@ class BormoClassApp {
   renderGuestLanding() {
     const main = document.getElementById("appMain");
     main.innerHTML = `
-      <div style="text-align: center; padding: 4rem 1rem; max-width: 720px; margin: 0 auto;">
+      <div style="text-align: center; padding: 4rem 1rem; max-width: 760px; margin: 0 auto;">
         <h1 style="font-size: 2.75rem; font-weight: 800; line-height: 1.2; margin-bottom: 1rem;">
-          Школьный класс, авторизация и доска со стандартом <span style="color: var(--md-sys-color-primary);">Zero-PII</span>
+          Self-Hosted Open Source аналог <span style="color: var(--md-sys-color-primary);">Google Classroom</span>
         </h1>
         <p style="font-size: 1.2rem; color: var(--md-sys-color-on-surface-variant); margin-bottom: 2rem;">
-          0 байт персональных данных на сервере. Соответствие 152-ФЗ РФ. Неблокирующий SQLite WAL, Material Design 3.0 и нулевые внешние CDN.
+          Свободная суверенная LMS со встроенной интерактивной доской: 100% паритет с Google Classroom v1 API, 0 байт персональных данных на сервере (152-ФЗ РФ), SpeedGrader, SQLite WAL и нулевые внешние CDN.
         </p>
         <div style="display: flex; gap: 1rem; justify-content: center;">
           <button class="btn btn-primary" id="heroRegBtn" style="padding: 0.8rem 2rem; font-size: 1.1rem;">Начать работу</button>
